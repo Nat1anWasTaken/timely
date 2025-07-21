@@ -20,7 +20,7 @@ func NewOAuthConfig() *OAuthConfig {
 			Scopes: []string{
 				"https://www.googleapis.com/auth/userinfo.email",
 				"https://www.googleapis.com/auth/userinfo.profile",
-				"https://www.googleapis.com/auth/calendar",
+				"https://www.googleapis.com/auth/calendar.readonly",
 			},
 			Endpoint: google.Endpoint,
 		},
