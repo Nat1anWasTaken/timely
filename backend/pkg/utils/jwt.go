@@ -2,7 +2,9 @@ package utils
 
 import (
 	"errors"
+	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -41,6 +43,45 @@ func GenerateJWT(userID uint64, email string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(jwtSecret)
+}
+
+// CreateJWTCookie creates an HTTP cookie with JWT token configured for the client domain
+func CreateJWTCookie(token string) *http.Cookie {
+	clientDomain := os.Getenv("FRONTEND_DOMAIN")
+
+	// Extract domain from FRONTEND_DOMAIN URL (e.g., "http://localhost:3000" -> "localhost")
+	var domain string
+	if clientDomain != "" {
+		// Remove protocol
+		if strings.HasPrefix(clientDomain, "http://") {
+			clientDomain = clientDomain[7:]
+		} else if strings.HasPrefix(clientDomain, "https://") {
+			clientDomain = clientDomain[8:]
+		}
+
+		// Extract domain part (remove port if present)
+		parts := strings.Split(clientDomain, ":")
+		domain = parts[0]
+
+		// Don't set domain for localhost (browser requirement)
+		if domain == "localhost" || domain == "127.0.0.1" {
+			domain = ""
+		}
+	}
+
+	// Determine if we should use Secure flag (true for HTTPS)
+	secure := strings.HasPrefix(os.Getenv("FRONTEND_DOMAIN"), "https://")
+
+	return &http.Cookie{
+		Name:     "access_token",
+		Value:    token,
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Now().Add(24 * time.Hour), // 1 day expiration
+		Path:     "/",
+		Domain:   domain,
+	}
 }
 
 // ValidateJWT validates a JWT token and returns the claims

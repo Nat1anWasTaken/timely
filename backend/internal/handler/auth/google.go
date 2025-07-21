@@ -1,13 +1,15 @@
 package auth
 
 import (
-	"encoding/json"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
 
 	"github.com/NathanWasTaken/timely/backend/internal/service"
+	"github.com/NathanWasTaken/timely/backend/pkg/utils"
 )
 
 type GoogleOAuthHandler struct {
@@ -131,32 +133,31 @@ func (h *GoogleOAuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// TODO: Create JWT token or session here
-	// For now, we'll set a simple session cookie
-	sessionCookie := &http.Cookie{
-		Name:     "user_session",
-		Value:    user.Email, // In production, use a proper session token
-		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
-		SameSite: http.SameSiteLaxMode,
-		Expires:  time.Now().Add(24 * time.Hour),
-		Path:     "/",
-	}
-	http.SetCookie(w, sessionCookie)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	response := map[string]interface{}{
-		"success": true,
-		"message": "Successfully authenticated with Google",
-		"user":    user,
-	}
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		h.logger.Error("Failed to encode response", zap.Error(err))
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+	// Generate JWT token
+	jwtToken, err := utils.GenerateJWT(user.ID, user.Email)
+	if err != nil {
+		h.logger.Error("Failed to generate JWT token", zap.Error(err))
+		http.Error(w, "Failed to generate authentication token", http.StatusInternalServerError)
 		return
 	}
+
+	// Set JWT as HttpOnly cookie
+	jwtCookie := utils.CreateJWTCookie(jwtToken)
+	http.SetCookie(w, jwtCookie)
+
+	// Get client URL for redirect
+	clientURL := os.Getenv("FRONTEND_DOMAIN")
+	if clientURL == "" {
+		clientURL = "http://localhost:3000" // Default for development
+	}
+
+	// Ensure clientURL ends without trailing slash
+	clientURL = strings.TrimSuffix(clientURL, "/")
+
+	dashboardURL := clientURL + "/dashboard"
+
+	// Redirect to client dashboard
+	http.Redirect(w, r, dashboardURL, http.StatusTemporaryRedirect)
 
 	h.logger.Info("User successfully authenticated",
 		zap.String("email", user.Email),

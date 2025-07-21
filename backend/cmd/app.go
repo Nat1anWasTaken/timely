@@ -3,6 +3,7 @@ package cmd
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -14,6 +15,8 @@ import (
 	"github.com/NathanWasTaken/timely/backend/internal/model"
 	"github.com/NathanWasTaken/timely/backend/internal/router"
 	"github.com/NathanWasTaken/timely/backend/pkg/utils"
+
+	_ "github.com/NathanWasTaken/timely/backend/docs"
 )
 
 // @title Timely Backend API
@@ -85,11 +88,14 @@ func Run() {
 	})
 
 	// Swagger documentation
-	r.Get("/swagger/*", httpSwagger.WrapHandler)
+	if os.Getenv("GO_ENV") == "development" {
+		r.Get("/swagger/*", httpSwagger.WrapHandler)
+	}
 
 	r.Route("/api", func(r chi.Router) {
 		router.AuthRouter(r)
 	})
+	utils.PrintLogo()
 
 	http.ListenAndServe(":8000", r)
 }

@@ -91,6 +91,10 @@ func (h *LoginHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set JWT as HttpOnly cookie
+	jwtCookie := utils.CreateJWTCookie(token)
+	http.SetCookie(w, jwtCookie)
+
 	// Clear password from response
 	user.Password = nil
 
