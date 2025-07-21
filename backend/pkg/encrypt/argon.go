@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	// Argon2 parameters tuned for ~5 second hash time
+	// Argon2 parameters tuned for ~0.5 second hash time (benchmarked: ~496ms)
 	// These can be adjusted based on your hardware
-	iterations = 25         // Number of iterations (increased for longer timing)
-	memory     = 512 * 1024 // Memory usage in KB (512 MB, increased)
+	iterations = 2          // Number of iterations (optimal for 500ms timing)
+	memory     = 512 * 1024 // Memory usage in KB (512 MB, optimal for 500ms)
 	threads    = 4          // Number of threads (adjust based on CPU cores)
 	keyLength  = 32         // Length of the derived key in bytes
 	saltLength = 16         // Length of the salt in bytes
@@ -30,7 +30,7 @@ type Config struct {
 	SaltLength uint32
 }
 
-// DefaultConfig returns a configuration tuned for ~5 second hash time
+// DefaultConfig returns a configuration tuned for ~0.5 second hash time
 func DefaultConfig() *Config {
 	// Adjust threads based on available CPU cores
 	numCPU := runtime.NumCPU()
