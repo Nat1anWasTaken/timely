@@ -9,6 +9,7 @@ import (
 
 	"github.com/NathanWasTaken/timely/backend/internal/model"
 	"github.com/NathanWasTaken/timely/backend/internal/repository"
+	"github.com/NathanWasTaken/timely/backend/pkg/encrypt"
 	"github.com/NathanWasTaken/timely/backend/pkg/utils"
 )
 
@@ -82,6 +83,82 @@ func (s *UserService) GetUserByEmail(email string) (*model.User, error) {
 // GetUserByID retrieves a user by ID
 func (s *UserService) GetUserByID(id uint64) (*model.User, error) {
 	return s.userRepo.FindByID(id)
+}
+
+// CreateUser creates a new user with email/password authentication
+func (s *UserService) CreateUser(req *model.RegisterRequest) (*model.User, error) {
+	// Check if email already exists
+	if exists, err := s.userRepo.ExistsByEmail(req.Email); err != nil {
+		return nil, err
+	} else if exists {
+		return nil, errors.New("user with this email already exists")
+	}
+
+	// Check if username already exists
+	if exists, err := s.userRepo.ExistsByUsername(req.Username); err != nil {
+		return nil, err
+	} else if exists {
+		return nil, errors.New("username already taken")
+	}
+
+	// Hash the password
+	hashedPassword, err := s.hashPassword(req.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create user
+	user := &model.User{
+		ID:          utils.GenerateID(),
+		Email:       req.Email,
+		Username:    req.Username,
+		DisplayName: req.DisplayName,
+		Password:    &hashedPassword,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	if err := s.userRepo.Create(user); err != nil {
+		return nil, err
+	}
+
+	s.logger.Info("Created new user", zap.String("email", user.Email), zap.String("username", user.Username))
+	return user, nil
+}
+
+// AuthenticateUser authenticates a user with email/password
+func (s *UserService) AuthenticateUser(req *model.LoginRequest) (*model.User, error) {
+	// Find user by email
+	user, err := s.userRepo.FindByEmail(req.Email)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("invalid email or password")
+		}
+		return nil, err
+	}
+
+	// Check if user has a password (not OAuth-only user)
+	if user.Password == nil {
+		return nil, errors.New("this account uses OAuth authentication")
+	}
+
+	// Verify password
+	if !s.verifyPassword(req.Password, *user.Password) {
+		return nil, errors.New("invalid email or password")
+	}
+
+	s.logger.Info("User authenticated successfully", zap.String("email", user.Email))
+	return user, nil
+}
+
+// hashPassword hashes a password using Argon2
+func (s *UserService) hashPassword(password string) (string, error) {
+	return encrypt.HashPassword(password)
+}
+
+// verifyPassword verifies a password against its hash
+func (s *UserService) verifyPassword(password, hash string) bool {
+	return encrypt.VerifyPassword(password, hash)
 }
 
 // generateUniqueUsername generates a unique username from the given name

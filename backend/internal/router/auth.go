@@ -20,12 +20,15 @@ func AuthRouter(r chi.Router) {
 	oauthService := service.NewOAuthService(oauthConfig, userService)
 	googleHandler := auth.NewGoogleOAuthHandler(oauthService, userService)
 
+	// Initialize traditional auth handlers
+	loginHandler := auth.NewLoginHandler(userService)
+	registerHandler := auth.NewRegisterHandler(userService)
+
 	// Public Routes
 	r.Route("/auth", func(r chi.Router) {
 		// Traditional auth endpoints
-		r.Post("/login", auth.Login)
-		r.Get("/register", auth.Register)  // Changed to GET to show available registration options
-		r.Post("/register", auth.Register) // Also support POST for traditional registration
+		r.Post("/login", loginHandler.Login)
+		r.Post("/register", registerHandler.Register) // Handle registration
 
 		// Google OAuth endpoints
 		r.Get("/google/login", googleHandler.GoogleLogin)

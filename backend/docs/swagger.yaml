@@ -1,0 +1,262 @@
+basePath: /
+definitions:
+  model.AuthResponse:
+    description: Successful authentication response
+    properties:
+      message:
+        description: Response message
+        example: Login successful
+        type: string
+      success:
+        description: Indicates if the operation was successful
+        example: true
+        type: boolean
+      token:
+        description: JWT authentication token
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/model.User'
+        description: User information
+    type: object
+  model.ErrorResponse:
+    description: Error response structure
+    properties:
+      error:
+        description: Detailed error information
+        example: invalid email or password
+        type: string
+      message:
+        description: Error message
+        example: Authentication failed
+        type: string
+      success:
+        description: Always false for error responses
+        example: false
+        type: boolean
+    type: object
+  model.LoginRequest:
+    description: Login request payload
+    properties:
+      email:
+        description: User's email address
+        example: user@example.com
+        type: string
+      password:
+        description: User's password (minimum 6 characters)
+        example: password123
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  model.RegisterRequest:
+    description: Registration request payload
+    properties:
+      display_name:
+        description: User's display name (1-100 characters)
+        example: John Doe
+        maxLength: 100
+        minLength: 1
+        type: string
+      email:
+        description: User's email address
+        example: user@example.com
+        type: string
+      password:
+        description: Password (minimum 6 characters)
+        example: password123
+        minLength: 6
+        type: string
+      username:
+        description: Username (3-50 characters)
+        example: johndoe
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - display_name
+    - email
+    - password
+    - username
+    type: object
+  model.User:
+    description: User account information
+    properties:
+      created_at:
+        description: Account creation timestamp
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      display_name:
+        description: User's display name
+        example: John Doe
+        type: string
+      email:
+        description: User's email address
+        example: user@example.com
+        type: string
+      google_id:
+        description: Google OAuth ID
+        example: "123456789"
+        type: string
+      id:
+        description: Unique user identifier
+        example: "123456789"
+        type: string
+      password:
+        description: Password hash (excluded from responses)
+        type: string
+      picture:
+        description: Profile picture URL
+        example: https://example.com/avatar.jpg
+        type: string
+      updated_at:
+        description: Last update timestamp
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      username:
+        description: Username
+        example: johndoe
+        type: string
+    type: object
+host: localhost:8000
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: A comprehensive authentication service with traditional email/password
+    and Google OAuth support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Timely Backend API
+  version: "1.0"
+paths:
+  /api/auth/google/callback:
+    get:
+      consumes:
+      - application/json
+      description: Handles the callback from Google OAuth, exchanges code for user
+        info and creates/updates user account
+      parameters:
+      - description: Authorization code from Google
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: State parameter for CSRF protection
+        in: query
+        name: state
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Authentication successful with user data
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request - Missing state cookie, invalid state, or missing
+            authorization code
+        "500":
+          description: Internal server error - Token exchange or user processing failed
+      summary: Google OAuth Callback
+      tags:
+      - OAuth
+  /api/auth/google/login:
+    get:
+      description: Redirects user to Google's OAuth consent page to begin authentication
+        process
+      produces:
+      - text/html
+      responses:
+        "307":
+          description: Redirect to Google OAuth consent page
+        "500":
+          description: Internal server error
+      summary: Initiate Google OAuth Login
+      tags:
+      - OAuth
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password, returns JWT token on
+        success
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            $ref: '#/definitions/model.AuthResponse'
+        "400":
+          description: Bad request - Invalid request body or missing fields
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized - Invalid credentials
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: User Login
+      tags:
+      - Authentication
+  /api/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account with email, username, display name,
+        and password
+      parameters:
+      - description: Registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Registration successful
+          schema:
+            $ref: '#/definitions/model.AuthResponse'
+        "400":
+          description: Bad request - Invalid request body, missing fields, or validation
+            errors
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: User Registration
+      tags:
+      - Authentication
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

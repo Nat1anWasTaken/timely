@@ -55,3 +55,27 @@ func (r *UserRepository) FindByID(id uint64) (*model.User, error) {
 	}
 	return &user, nil
 }
+
+// FindByUsername finds a user by username
+func (r *UserRepository) FindByUsername(username string) (*model.User, error) {
+	var user model.User
+	err := r.db.Where("username = ?", username).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// ExistsByEmail checks if a user with the given email exists
+func (r *UserRepository) ExistsByEmail(email string) (bool, error) {
+	var count int64
+	err := r.db.Model(&model.User{}).Where("email = ?", email).Count(&count).Error
+	return count > 0, err
+}
+
+// ExistsByUsername checks if a user with the given username exists
+func (r *UserRepository) ExistsByUsername(username string) (bool, error) {
+	var count int64
+	err := r.db.Model(&model.User{}).Where("username = ?", username).Count(&count).Error
+	return count > 0, err
+}

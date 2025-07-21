@@ -24,7 +24,14 @@ func NewGoogleOAuthHandler(oauthService *service.OAuthService, userService *serv
 	}
 }
 
-// GoogleLogin redirects the user to Google's OAuth consent page
+// GoogleLogin initiates Google OAuth flow
+// @Summary Initiate Google OAuth Login
+// @Description Redirects user to Google's OAuth consent page to begin authentication process
+// @Tags OAuth
+// @Produce html
+// @Success 307 "Redirect to Google OAuth consent page"
+// @Failure 500 "Internal server error"
+// @Router /api/auth/google/login [get]
 func (h *GoogleOAuthHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 	// Generate state parameter for CSRF protection
 	state, err := h.oauthService.GenerateStateOauthCookie()
@@ -53,7 +60,18 @@ func (h *GoogleOAuthHandler) GoogleLogin(w http.ResponseWriter, r *http.Request)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-// GoogleCallback handles the callback from Google OAuth
+// GoogleCallback handles Google OAuth callback
+// @Summary Google OAuth Callback
+// @Description Handles the callback from Google OAuth, exchanges code for user info and creates/updates user account
+// @Tags OAuth
+// @Accept json
+// @Produce json
+// @Param code query string true "Authorization code from Google"
+// @Param state query string true "State parameter for CSRF protection"
+// @Success 200 {object} map[string]interface{} "Authentication successful with user data"
+// @Failure 400 "Bad request - Missing state cookie, invalid state, or missing authorization code"
+// @Failure 500 "Internal server error - Token exchange or user processing failed"
+// @Router /api/auth/google/callback [get]
 func (h *GoogleOAuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	// Verify state parameter
 	stateCookie, err := r.Cookie("oauthstate")
