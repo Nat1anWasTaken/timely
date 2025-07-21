@@ -1,7 +1,7 @@
 <script lang="ts">
     import "../app.css";
     import { page } from "$app/state";
-    import Navbar from "$lib/components/dashboard/navbar.svelte";
+    import Navbar from "$lib/components/navbar.svelte";
     import { ModeWatcher } from "mode-watcher";
 
     let { children } = $props();
