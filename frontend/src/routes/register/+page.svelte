@@ -1,6 +1,6 @@
 <script lang="ts">
-    import RegisterForm from "$lib/components/dashboard/register-form.svelte";
-    import BackToHome from "$lib/components/back-to-home.svelte";
+    import RegisterForm from "$lib/components/auth/register-form.svelte";
+    import BackToHome from "$lib/components/auth/back-to-home.svelte";
 </script>
 
 <div class="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">

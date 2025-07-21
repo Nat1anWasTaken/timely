@@ -2,7 +2,7 @@
     import { Button } from "$lib/components/ui/button/index.ts";
     import { Card, CardContent } from "$lib/components/ui/card/index.ts";
     import { Calendar } from "@lucide/svelte";
-    import CalendarCard from "$lib/components/calendar-card.svelte";
+    import CalendarCard from "$lib/components/dashboard/calendar-card.svelte";
 </script>
 
 <div class="w-2xl max-w-[90vw] space-y-6">
