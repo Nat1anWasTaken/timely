@@ -1,7 +1,7 @@
 <script>
-    import { Card, CardTitle } from "$lib/components/ui/card/index.js";
-    import { Button } from "$lib/components/ui/button/index.js";
-    import ModeToggle from "$lib/components/mode-toggle.svelte";
+    import { Card, CardTitle } from "$lib/components/ui/card/index.ts";
+    import { Button } from "$lib/components/ui/button/index.ts";
+    import ModeToggle from "$lib/components/dashboard/mode-toggle.svelte";
 </script>
 
 <div class="m-4 flex max-h-16">

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import RegisterForm from "$lib/components/register-form.svelte";
+    import RegisterForm from "$lib/components/dashboard/register-form.svelte";
     import BackToHome from "$lib/components/back-to-home.svelte";
 </script>
 

@@ -4,7 +4,22 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="83189a6a-336f-4af4-a801-5be46900d8e6" name="Changes" comment="feat(calendar): implement Google Calendar integration with event fetching and selection" />
+    <list default="true" id="83189a6a-336f-4af4-a801-5be46900d8e6" name="Changes" comment="feat: add .gitignore to exclude IDE configuration files">
+      <change afterPath="$PROJECT_DIR$/frontend/src/routes/dashboard/+page.svelte" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/routes/dashboard/types.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/pnpm-lock.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/pnpm-lock.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/lib/components/back-to-home.svelte" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/lib/components/back-to-home.svelte" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/lib/components/login-form.svelte" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/lib/components/login-form.svelte" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/lib/components/mode-toggle.svelte" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/lib/components/dashboard/mode-toggle.svelte" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/lib/components/navbar.svelte" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/lib/components/dashboard/navbar.svelte" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/lib/components/register-form.svelte" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/lib/components/dashboard/register-form.svelte" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/routes/+layout.svelte" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/routes/+layout.svelte" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/routes/+page.svelte" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/routes/+page.svelte" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/routes/register/+page.svelte" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/routes/register/+page.svelte" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/tsconfig.json" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -37,50 +52,35 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "JavaScript Debug.Next.js: debug client-side.executor": "Debug",
-    "JavaScript Debug.localhost:3000.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "js.debugger.nextJs.config.created.client": "true",
-    "js.debugger.nextJs.config.created.server": "true",
-    "last_opened_file_path": "/Users/nathan/Developments/Repositories/timely",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "pnpm",
-    "npm.Next.js: server-side.executor": "Debug",
-    "prettierjs.PrettierConfiguration.Package": "/Users/nathan/Developments/Repositories/timely/frontend/node_modules/prettier",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "ts.external.directory.path": "/Users/nathan/Developments/Repositories/timely/frontend/node_modules/typescript/lib",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;JavaScript Debug.Next.js: debug client-side.executor&quot;: &quot;Debug&quot;,
+    &quot;JavaScript Debug.localhost:3000.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;js.debugger.nextJs.config.created.client&quot;: &quot;true&quot;,
+    &quot;js.debugger.nextJs.config.created.server&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/nathan/Developments/Repositories/timely&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;pnpm&quot;,
+    &quot;npm.Next.js: server-side.executor&quot;: &quot;Debug&quot;,
+    &quot;prettierjs.PrettierConfiguration.Package&quot;: &quot;/Users/nathan/Developments/Repositories/timely/frontend/node_modules/prettier&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;settings.javascript.prettier&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;/Users/nathan/Developments/Repositories/timely/frontend/node_modules/typescript/lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="JavaScript Debug.Next.js: debug client-side">
     <configuration name="Next.js: debug client-side" type="JavascriptDebugType" uri="http://localhost:3000/">
       <method v="2" />
     </configuration>
     <configuration name="localhost:3000" type="JavascriptDebugType" temporary="true" nameIsGenerated="true" uri="http://localhost:3000">
-      <method v="2" />
-    </configuration>
-    <configuration default="true" type="ShConfigurationType">
-      <option name="SCRIPT_TEXT" value="" />
-      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
-      <option name="SCRIPT_PATH" value="" />
-      <option name="SCRIPT_OPTIONS" value="" />
-      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
-      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
-      <option name="INTERPRETER_PATH" value="/opt/homebrew/bin/fish" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="EXECUTE_IN_TERMINAL" value="true" />
-      <option name="EXECUTE_SCRIPT_FILE" value="true" />
-      <envs />
       <method v="2" />
     </configuration>
     <configuration name="Next.js: server-side" type="js.build_tools.npm">
@@ -114,6 +114,9 @@
       <option name="presentableId" value="Default" />
       <updated>1753066205911</updated>
       <workItem from="1753066206924" duration="581000" />
+      <workItem from="1753110759882" duration="62000" />
+      <workItem from="1753110838261" duration="19000" />
+      <workItem from="1753111610019" duration="645000" />
     </task>
     <task id="LOCAL-00001" summary="ˆ">
       <option name="closed" value="true" />
@@ -203,7 +206,15 @@
       <option name="project" value="LOCAL" />
       <updated>1753094316876</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="feat: add .gitignore to exclude IDE configuration files">
+      <option name="closed" value="true" />
+      <created>1753111640904</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1753111640904</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -221,6 +232,7 @@
     <MESSAGE value="fix(button): add cursor pointer style to button variants for better UX" />
     <MESSAGE value="feat(auth): add accessType option for Google Calendar API integration" />
     <MESSAGE value="feat(calendar): implement Google Calendar integration with event fetching and selection" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(calendar): implement Google Calendar integration with event fetching and selection" />
+    <MESSAGE value="feat: add .gitignore to exclude IDE configuration files" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: add .gitignore to exclude IDE configuration files" />
   </component>
 </project>

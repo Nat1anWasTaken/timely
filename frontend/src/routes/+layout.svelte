@@ -1,7 +1,7 @@
 <script lang="ts">
     import "../app.css";
     import { page } from "$app/state";
-    import Navbar from "$lib/components/navbar.svelte";
+    import Navbar from "$lib/components/dashboard/navbar.svelte";
     import { ModeWatcher } from "mode-watcher";
 
     let { children } = $props();
@@ -16,7 +16,7 @@
         <Navbar />
     {/if}
 
-    <div class="h-full w-full flex-1 overflow-y-auto">
+    <div class="flex h-full w-full flex-1 items-center justify-center overflow-y-auto">
         {@render children()}
     </div>
 </div>

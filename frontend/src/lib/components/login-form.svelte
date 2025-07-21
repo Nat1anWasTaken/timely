@@ -1,8 +1,8 @@
 <script lang="ts">
-    import * as Card from "$lib/components/ui/card/index.js";
-    import { Label } from "$lib/components/ui/label/index.js";
-    import { Input } from "$lib/components/ui/input/index.js";
-    import { Button } from "$lib/components/ui/button/index.js";
+    import * as Card from "$lib/components/ui/card";
+    import { Label } from "$lib/components/ui/label";
+    import { Input } from "$lib/components/ui/input";
+    import { Button } from "$lib/components/ui/button";
     import { cn } from "$lib/utils.js";
     import type { HTMLAttributes } from "svelte/elements";
 
