@@ -4,20 +4,22 @@ import (
 	"log"
 
 	"github.com/NathanWasTaken/timely/backend/internal/config"
-	"github.com/NathanWasTaken/timely/backend/internal/model"
+	"github.com/NathanWasTaken/timely/backend/internal/migrations"
+	"github.com/go-gormigrate/gormigrate/v2"
 )
 
 // InitializeDatabase sets up and migrates the database
 func InitializeDatabase() {
 	dbConfig := config.NewDatabaseConfig()
+	db := dbConfig.GetDB()
 
-	// Auto-migrate the schema
-	if err := dbConfig.GetDB().AutoMigrate(
-		&model.User{},
-		&model.Account{},
-		&model.Calendar{},
-		&model.CalendarEvent{},
-	); err != nil {
+	// Initialize gormigrate with migrations
+	m := gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{
+		migrations.InitialSchema,
+	})
+
+	// Run migrations
+	if err := m.Migrate(); err != nil {
 		log.Fatal("Failed to migrate database: " + err.Error())
 	}
 
