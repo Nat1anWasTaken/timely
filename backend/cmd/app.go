@@ -94,6 +94,7 @@ func Run() {
 
 	r.Route("/api", func(r chi.Router) {
 		router.AuthRouter(r)
+		router.CalendarRouter(r)
 	})
 	utils.PrintLogo()
 

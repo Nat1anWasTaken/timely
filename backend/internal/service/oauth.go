@@ -39,7 +39,11 @@ func (s *OAuthService) GenerateStateOauthCookie() (string, error) {
 
 // GetGoogleLoginURL returns the Google OAuth login URL with state parameter
 func (s *OAuthService) GetGoogleLoginURL(state string) string {
-	return s.config.Google.AuthCodeURL(state, oauth2.AccessTypeOffline)
+	return s.config.Google.AuthCodeURL(
+		state,
+		oauth2.AccessTypeOffline,
+		oauth2.SetAuthURLParam("prompt", "consent"),
+	)
 }
 
 // ExchangeCodeForToken exchanges the authorization code for an access token

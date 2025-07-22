@@ -167,6 +167,52 @@
                     }
                 }
             }
+        },
+        "/api/calendar/google/calendars": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves all Google calendars for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Calendar"
+                ],
+                "summary": "Get User Calendars",
+                "responses": {
+                    "200": {
+                        "description": "Calendars retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.CalendarListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Google token not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -199,6 +245,26 @@
                 }
             }
         },
+        "model.CalendarListResponse": {
+            "description": "Calendar list response",
+            "type": "object",
+            "properties": {
+                "calendars": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.GoogleCalendar"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Calendars retrieved successfully"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
         "model.ErrorResponse": {
             "description": "Error response structure",
             "type": "object",
@@ -217,6 +283,94 @@
                     "description": "Always false for error responses",
                     "type": "boolean",
                     "example": false
+                }
+            }
+        },
+        "model.GoogleCalendar": {
+            "description": "Google Calendar information",
+            "type": "object",
+            "properties": {
+                "accessRole": {
+                    "type": "string",
+                    "example": "owner"
+                },
+                "backgroundColor": {
+                    "type": "string",
+                    "example": "#9c27b0"
+                },
+                "colorId": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "conferenceProperties": {
+                    "$ref": "#/definitions/model.GoogleCalendarConferenceProperties"
+                },
+                "deleted": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Personal calendar"
+                },
+                "etag": {
+                    "type": "string",
+                    "example": "\"00000000000000000000\""
+                },
+                "foregroundColor": {
+                    "type": "string",
+                    "example": "#ffffff"
+                },
+                "hidden": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "id": {
+                    "type": "string",
+                    "example": "primary"
+                },
+                "kind": {
+                    "type": "string",
+                    "example": "calendar#calendarListEntry"
+                },
+                "location": {
+                    "type": "string",
+                    "example": "Mountain View, CA"
+                },
+                "primary": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "selected": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "summary": {
+                    "type": "string",
+                    "example": "My Calendar"
+                },
+                "summaryOverride": {
+                    "type": "string",
+                    "example": "Custom Summary"
+                },
+                "timeZone": {
+                    "type": "string",
+                    "example": "America/Los_Angeles"
+                }
+            }
+        },
+        "model.GoogleCalendarConferenceProperties": {
+            "description": "Google Calendar conference properties",
+            "type": "object",
+            "properties": {
+                "allowedConferenceSolutionTypes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"hangoutsMeet\"]"
+                    ]
                 }
             }
         },

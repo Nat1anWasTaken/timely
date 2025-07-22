@@ -19,6 +19,20 @@ definitions:
         - $ref: '#/definitions/model.User'
         description: User information
     type: object
+  model.CalendarListResponse:
+    description: Calendar list response
+    properties:
+      calendars:
+        items:
+          $ref: '#/definitions/model.GoogleCalendar'
+        type: array
+      message:
+        example: Calendars retrieved successfully
+        type: string
+      success:
+        example: true
+        type: boolean
+    type: object
   model.ErrorResponse:
     description: Error response structure
     properties:
@@ -34,6 +48,70 @@ definitions:
         description: Always false for error responses
         example: false
         type: boolean
+    type: object
+  model.GoogleCalendar:
+    description: Google Calendar information
+    properties:
+      accessRole:
+        example: owner
+        type: string
+      backgroundColor:
+        example: '#9c27b0'
+        type: string
+      colorId:
+        example: "1"
+        type: string
+      conferenceProperties:
+        $ref: '#/definitions/model.GoogleCalendarConferenceProperties'
+      deleted:
+        example: false
+        type: boolean
+      description:
+        example: Personal calendar
+        type: string
+      etag:
+        example: '"00000000000000000000"'
+        type: string
+      foregroundColor:
+        example: '#ffffff'
+        type: string
+      hidden:
+        example: false
+        type: boolean
+      id:
+        example: primary
+        type: string
+      kind:
+        example: calendar#calendarListEntry
+        type: string
+      location:
+        example: Mountain View, CA
+        type: string
+      primary:
+        example: true
+        type: boolean
+      selected:
+        example: true
+        type: boolean
+      summary:
+        example: My Calendar
+        type: string
+      summaryOverride:
+        example: Custom Summary
+        type: string
+      timeZone:
+        example: America/Los_Angeles
+        type: string
+    type: object
+  model.GoogleCalendarConferenceProperties:
+    description: Google Calendar conference properties
+    properties:
+      allowedConferenceSolutionTypes:
+        example:
+        - '["hangoutsMeet"]'
+        items:
+          type: string
+        type: array
     type: object
   model.LoginRequest:
     description: Login request payload
@@ -237,4 +315,33 @@ paths:
       summary: User Registration
       tags:
       - Authentication
+  /api/calendar/google/calendars:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all Google calendars for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Calendars retrieved successfully
+          schema:
+            $ref: '#/definitions/model.CalendarListResponse'
+        "401":
+          description: Unauthorized - Authentication required
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found - Google token not found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get User Calendars
+      tags:
+      - Calendar
 swagger: "2.0"
