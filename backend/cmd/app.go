@@ -107,8 +107,8 @@ func DatabaseInit() {
 	// Auto-migrate the schema
 	if err := dbConfig.GetDB().AutoMigrate(
 		&model.User{},
-		&model.GoogleToken{},
+		&model.Account{},
 	); err != nil {
-		log.Fatal("Failed to migrate database:", err)
+		log.Fatal("Failed to migrate database: " + err.Error())
 	}
 }

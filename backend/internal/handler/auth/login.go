@@ -78,7 +78,7 @@ func (h *LoginHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate JWT token
-	token, err := utils.GenerateJWT(user.ID, user.Email)
+	token, err := utils.GenerateJWT(user.ID)
 	if err != nil {
 		h.logger.Error("Failed to generate JWT token", zap.Error(err))
 		response := model.ErrorResponse{
@@ -110,7 +110,6 @@ func (h *LoginHandler) Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 
 	h.logger.Info("User logged in successfully",
-		zap.String("email", user.Email),
 		zap.String("username", user.Username))
 }
 

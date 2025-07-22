@@ -21,8 +21,7 @@ const (
 
 // UserInfo represents the user information stored in the request context
 type UserInfo struct {
-	ID    uint64 `json:"user_id"`
-	Email string `json:"email"`
+	ID uint64 `json:"user_id"`
 }
 
 // JWTMiddleware creates a middleware that validates JWT tokens
@@ -48,7 +47,6 @@ func JWTMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {
 			// Create user info from claims
 			userInfo := &UserInfo{
 				ID:    claims.UserID,
-				Email: claims.Email,
 			}
 
 			// Add user info to request context
@@ -58,6 +56,40 @@ func JWTMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {
 	}
 }
 
+// OptionalJWTMiddleware creates a middleware that optionally validates JWT tokens
+// If no token is provided or token is invalid, the request continues without authentication
+func OptionalJWTMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			// Extract token from cookie first, then from Authorization header
+			token := extractTokenFromRequest(r)
+			if token == "" {
+				// No token provided, continue without authentication
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Validate the token
+			claims, err := utils.ValidateJWT(token)
+			if err != nil {
+				logger.Error("JWT validation failed", zap.Error(err))
+				// Invalid token, continue without authentication instead of returning error
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Create user info from claims
+			userInfo := &UserInfo{
+				ID:    claims.UserID,
+			}
+
+			// Add user info to request context
+			ctx := context.WithValue(r.Context(), UserContextKeyValue, userInfo)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
 
 // extractTokenFromRequest extracts JWT token from cookie or Authorization header
 func extractTokenFromRequest(r *http.Request) string {

@@ -98,7 +98,7 @@ func (h *RegisterHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate JWT token
-	token, err := utils.GenerateJWT(user.ID, user.Email)
+	token, err := utils.GenerateJWT(user.ID)
 	if err != nil {
 		h.logger.Error("Failed to generate JWT token", zap.Error(err))
 		response := model.ErrorResponse{
@@ -130,7 +130,6 @@ func (h *RegisterHandler) Register(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 
 	h.logger.Info("User registered successfully",
-		zap.String("email", user.Email),
 		zap.String("username", user.Username))
 }
 

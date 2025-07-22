@@ -2,39 +2,68 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"golang.org/x/oauth2"
 
 	"github.com/NathanWasTaken/timely/backend/internal/config"
 	"github.com/NathanWasTaken/timely/backend/internal/model"
+	"github.com/NathanWasTaken/timely/backend/pkg/oauth"
 )
 
 type OAuthService struct {
-	config      *config.OAuthConfig
-	userService *UserService
+	config       *config.OAuthConfig
+	userService  *UserService
+	stateManager *oauth.StateManager
 }
 
-func NewOAuthService(config *config.OAuthConfig, userService *UserService) *OAuthService {
-	return &OAuthService{
-		config:      config,
-		userService: userService,
-	}
-}
-
-// GenerateStateOauthCookie generates a random state string for OAuth security
-func (s *OAuthService) GenerateStateOauthCookie() (string, error) {
-	b := make([]byte, 16)
-	_, err := rand.Read(b)
+func NewOAuthService(config *config.OAuthConfig, userService *UserService) (*OAuthService, error) {
+	stateManager, err := oauth.NewStateManager()
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("failed to create state manager: %w", err)
 	}
-	return base64.URLEncoding.EncodeToString(b), nil
+
+	return &OAuthService{
+		config:       config,
+		userService:  userService,
+		stateManager: stateManager,
+	}, nil
+}
+
+// GenerateStateOauthCookie generates a secure signed state string for OAuth security
+func (s *OAuthService) GenerateStateOauthCookie() (string, error) {
+	return s.stateManager.GenerateSimpleState()
+}
+
+// GenerateStateWithPayload generates a secure signed state with custom payload
+func (s *OAuthService) GenerateStateWithPayload(mode, from string) (string, error) {
+	switch mode {
+	case "login":
+		return s.stateManager.CreateLoginState(from) // from = redirect page
+	case "link":
+		return s.stateManager.CreateLinkState(from) // from = user ID
+	default:
+		return s.stateManager.CreateLoginState(from)
+	}
+}
+
+// VerifyState verifies and decodes a state parameter
+func (s *OAuthService) VerifyState(encodedState string) (*oauth.StatePayload, error) {
+	payload, err := s.stateManager.VerifyAndDecodeState(encodedState)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if state has expired (10 minutes)
+	if s.stateManager.IsStateExpired(payload, 10*time.Minute) {
+		return nil, fmt.Errorf("state parameter has expired")
+	}
+
+	return payload, nil
 }
 
 // GetGoogleLoginURL returns the Google OAuth login URL with state parameter
@@ -88,7 +117,7 @@ func (s *OAuthService) FindOrCreateUserFromGoogleWithToken(googleUser *model.Goo
 	return s.userService.FindOrCreateGoogleUser(googleUser, token)
 }
 
-// GetUserGoogleToken retrieves the stored Google OAuth token for a user
-func (s *OAuthService) GetUserGoogleToken(userID uint64) (*model.GoogleToken, error) {
-	return s.userService.GetGoogleTokenByUserID(userID)
+// GetUserGoogleAccount retrieves the stored Google account for a user
+func (s *OAuthService) GetUserGoogleAccount(userID uint64) (*model.Account, error) {
+	return s.userService.GetGoogleAccountByUserID(userID)
 }

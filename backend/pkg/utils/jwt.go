@@ -23,17 +23,15 @@ func init() {
 // Claims represents the JWT claims structure
 type Claims struct {
 	UserID uint64 `json:"user_id"`
-	Email  string `json:"email"`
 	jwt.RegisteredClaims
 }
 
 // GenerateJWT generates a new JWT token for the given user
-func GenerateJWT(userID uint64, email string) (string, error) {
+func GenerateJWT(userID uint64) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour) // Token expires in 24 hours
 
 	claims := &Claims{
 		UserID: userID,
-		Email:  email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

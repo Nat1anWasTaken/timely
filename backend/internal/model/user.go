@@ -9,28 +9,31 @@ import (
 // User represents a user in the system
 // @Description User account information
 type User struct {
-	ID          uint64         `json:"id,string" gorm:"primaryKey" example:"123456789"`              // Unique user identifier
-	Email       string         `json:"email" gorm:"uniqueIndex;not null" example:"user@example.com"` // User's email address
-	Username    string         `json:"username" gorm:"uniqueIndex;not null" example:"johndoe"`       // Username
-	DisplayName string         `json:"display_name" gorm:"not null" example:"John Doe"`              // User's display name
-	Password    *string        `json:"password,omitempty"`                                           // Password hash (excluded from responses)
-	Picture     *string        `json:"picture" example:"https://example.com/avatar.jpg"`             // Profile picture URL
-	GoogleID    *string        `json:"google_id,omitempty" gorm:"uniqueIndex" example:"123456789"`   // Google OAuth ID
-	CreatedAt   time.Time      `json:"created_at" example:"2024-01-01T00:00:00Z"`                    // Account creation timestamp
-	UpdatedAt   time.Time      `json:"updated_at" example:"2024-01-01T00:00:00Z"`                    // Last update timestamp
-	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`                                               // Soft delete timestamp (excluded from responses)
+	ID          uint64         `json:"id,string" gorm:"primaryKey" example:"123456789"`        // Unique user identifier
+	Username    string         `json:"username" gorm:"uniqueIndex;not null" example:"johndoe"` // Username
+	DisplayName string         `json:"display_name" gorm:"not null" example:"John Doe"`        // User's display name
+	Password    *string        `json:"password,omitempty"`                                     // Password hash (excluded from responses)
+	Picture     *string        `json:"picture" example:"https://example.com/avatar.jpg"`       // Profile picture URL
+	CreatedAt   time.Time      `json:"created_at" example:"2024-01-01T00:00:00Z"`              // Account creation timestamp
+	UpdatedAt   time.Time      `json:"updated_at" example:"2024-01-01T00:00:00Z"`              // Last update timestamp
+	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`                                         // Soft delete timestamp (excluded from responses)
+	Accounts    []Account      `json:"accounts,omitempty" gorm:"foreignKey:UserID"`            // Associated OAuth accounts
 }
 
-// GoogleToken represents a Google OAuth token and its metadata
-// @Description Google OAuth token information and metadata
-type GoogleToken struct {
-	ID           uint64    `json:"id,string" gorm:"primaryKey" example:"123456789"`       // Unique token identifier
-	UserID       uint64    `json:"user_id,string" gorm:"not null" example:"123456789"`    // Associated user ID
-	RefreshToken string    `json:"refresh_token" gorm:"not null" example:"1//04dXy7..."`  // Long-lived Google refresh token
-	AccessToken  string    `json:"access_token" gorm:"not null" example:"ya29.a0AfH6..."` // Short-lived Google access token
-	ExpiresAt    time.Time `json:"expires_at" example:"2024-01-01T00:00:00Z"`             // Access token expiration timestamp
-	CreatedAt    time.Time `json:"created_at" example:"2024-01-01T00:00:00Z"`             // Token creation timestamp
-	UpdatedAt    time.Time `json:"updated_at" example:"2024-01-01T00:00:00Z"`             // Token last update timestamp
+// Account represents an OAuth account linked to a user
+// @Description OAuth account information
+type Account struct {
+	ID           uint64         `json:"id,string" gorm:"primaryKey"`
+	UserID       uint64         `json:"user_id,string" gorm:"not null"`
+	Provider     string         `json:"provider" gorm:"not null"`    // e.g. "google", "github"
+	ProviderID   string         `json:"provider_id" gorm:"not null"` // e.g. Google sub, GitHub ID
+	Email        *string        `json:"email,omitempty"`             // e.g. example@gmail.com
+	AccessToken  *string        `json:"-" gorm:"type:text"`          // NEVER expose
+	RefreshToken *string        `json:"-" gorm:"type:text"`          // NEVER expose
+	Expiry       *time.Time     `json:"expiry,omitempty"`            // Access token expiry
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
 // GoogleUserInfo represents user information from Google OAuth

@@ -30,11 +30,11 @@ func NewUserService(userRepo *repository.UserRepository) *UserService {
 func (s *UserService) FindOrCreateGoogleUser(googleUser *model.GoogleUserInfo, token *oauth2.Token) (*model.User, error) {
 	// First try to find by Google ID
 	if user, err := s.userRepo.FindByGoogleID(googleUser.ID); err == nil {
-		s.logger.Info("Found existing user by Google ID", zap.String("email", user.Email))
+		s.logger.Info("Found existing user by Google ID", zap.String("username", user.Username))
 
 		// Update OAuth token if provided
 		if token != nil {
-			if err := s.CreateOrUpdateGoogleToken(user.ID, token); err != nil {
+			if err := s.UpdateGoogleAccountTokens(user.ID, token); err != nil {
 				s.logger.Error("Failed to update Google token", zap.Error(err))
 				// Don't fail the login if token storage fails, just log it
 			}
@@ -47,26 +47,39 @@ func (s *UserService) FindOrCreateGoogleUser(googleUser *model.GoogleUserInfo, t
 
 	// Then try to find by email (user might exist but not linked to Google)
 	if user, err := s.userRepo.FindByEmail(googleUser.Email); err == nil {
-		// Link Google ID to existing user
-		user.GoogleID = &googleUser.ID
+		// Link Google account to existing user
+		googleAccount := &model.Account{
+			ID:         utils.GenerateID(),
+			UserID:     user.ID,
+			Provider:   "google",
+			ProviderID: googleUser.ID,
+			Email:      &googleUser.Email,
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
+		}
+
+		if err := s.userRepo.CreateAccount(googleAccount); err != nil {
+			return nil, err
+		}
+
+		// Update user picture if not set
 		if user.Picture == nil && googleUser.Picture != "" {
 			user.Picture = &googleUser.Picture
-		}
-		user.UpdatedAt = time.Now()
-
-		if err := s.userRepo.Update(user); err != nil {
-			return nil, err
+			user.UpdatedAt = time.Now()
+			if err := s.userRepo.Update(user); err != nil {
+				return nil, err
+			}
 		}
 
 		// Store OAuth token if provided
 		if token != nil {
-			if err := s.CreateOrUpdateGoogleToken(user.ID, token); err != nil {
+			if err := s.UpdateGoogleAccountTokens(user.ID, token); err != nil {
 				s.logger.Error("Failed to store Google token", zap.Error(err))
 				// Don't fail the login if token storage fails, just log it
 			}
 		}
 
-		s.logger.Info("Linked Google account to existing user", zap.String("email", user.Email))
+		s.logger.Info("Linked Google account to existing user", zap.String("username", user.Username))
 		return user, nil
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
@@ -75,11 +88,9 @@ func (s *UserService) FindOrCreateGoogleUser(googleUser *model.GoogleUserInfo, t
 	// Create new user
 	user := &model.User{
 		ID:          utils.GenerateID(),
-		Email:       googleUser.Email,
 		Username:    s.generateUniqueUsername(googleUser.Name),
 		DisplayName: googleUser.Name,
 		Picture:     &googleUser.Picture,
-		GoogleID:    &googleUser.ID,
 		Password:    nil, // OAuth users don't have passwords
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
@@ -89,15 +100,30 @@ func (s *UserService) FindOrCreateGoogleUser(googleUser *model.GoogleUserInfo, t
 		return nil, err
 	}
 
+	// Create Google account
+	googleAccount := &model.Account{
+		ID:         utils.GenerateID(),
+		UserID:     user.ID,
+		Provider:   "google",
+		ProviderID: googleUser.ID,
+		Email:      &googleUser.Email,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+
+	if err := s.userRepo.CreateAccount(googleAccount); err != nil {
+		return nil, err
+	}
+
 	// Store OAuth token if provided
 	if token != nil {
-		if err := s.CreateOrUpdateGoogleToken(user.ID, token); err != nil {
-			s.logger.Error("Failed to store Google token for new user", zap.Error(err))
-			// Don't fail the registration if token storage fails, just log it
+		if err := s.UpdateGoogleAccountTokens(user.ID, token); err != nil {
+			s.logger.Error("Failed to store Google token", zap.Error(err))
+			// Don't fail the login if token storage fails, just log it
 		}
 	}
 
-	s.logger.Info("Created new user from Google OAuth", zap.String("email", user.Email))
+	s.logger.Info("Created new user with Google account", zap.String("username", user.Username))
 	return user, nil
 }
 
@@ -113,21 +139,24 @@ func (s *UserService) GetUserByID(id uint64) (*model.User, error) {
 
 // CreateUser creates a new user with email/password authentication
 func (s *UserService) CreateUser(req *model.RegisterRequest) (*model.User, error) {
-	// Check if email already exists
-	if exists, err := s.userRepo.ExistsByEmail(req.Email); err != nil {
+	// Check if user already exists
+	exists, err := s.userRepo.ExistsByEmail(req.Email)
+	if err != nil {
 		return nil, err
-	} else if exists {
+	}
+	if exists {
 		return nil, errors.New("user with this email already exists")
 	}
 
-	// Check if username already exists
-	if exists, err := s.userRepo.ExistsByUsername(req.Username); err != nil {
+	exists, err = s.userRepo.ExistsByUsername(req.Username)
+	if err != nil {
 		return nil, err
-	} else if exists {
+	}
+	if exists {
 		return nil, errors.New("username already taken")
 	}
 
-	// Hash the password
+	// Hash password
 	hashedPassword, err := s.hashPassword(req.Password)
 	if err != nil {
 		return nil, err
@@ -136,7 +165,6 @@ func (s *UserService) CreateUser(req *model.RegisterRequest) (*model.User, error
 	// Create user
 	user := &model.User{
 		ID:          utils.GenerateID(),
-		Email:       req.Email,
 		Username:    req.Username,
 		DisplayName: req.DisplayName,
 		Password:    &hashedPassword,
@@ -148,7 +176,21 @@ func (s *UserService) CreateUser(req *model.RegisterRequest) (*model.User, error
 		return nil, err
 	}
 
-	s.logger.Info("Created new user", zap.String("email", user.Email), zap.String("username", user.Username))
+	// Create email account
+	emailAccount := &model.Account{
+		ID:         utils.GenerateID(),
+		UserID:     user.ID,
+		Provider:   "email",
+		ProviderID: req.Email,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+
+	if err := s.userRepo.CreateAccount(emailAccount); err != nil {
+		return nil, err
+	}
+
+	s.logger.Info("Created new user", zap.String("username", user.Username))
 	return user, nil
 }
 
@@ -173,7 +215,7 @@ func (s *UserService) AuthenticateUser(req *model.LoginRequest) (*model.User, er
 		return nil, errors.New("invalid email or password")
 	}
 
-	s.logger.Info("User authenticated successfully", zap.String("email", user.Email))
+	s.logger.Info("User authenticated successfully", zap.String("username", user.Username))
 	return user, nil
 }
 
@@ -198,27 +240,37 @@ func (s *UserService) generateUniqueUsername(name string) string {
 	return baseUsername
 }
 
-// CreateOrUpdateGoogleToken creates or updates a Google OAuth token for a user
-func (s *UserService) CreateOrUpdateGoogleToken(userID uint64, token *oauth2.Token) error {
-	googleToken := &model.GoogleToken{
-		ID:           utils.GenerateID(),
-		UserID:       userID,
-		RefreshToken: token.RefreshToken,
-		AccessToken:  token.AccessToken,
-		ExpiresAt:    token.Expiry,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+// UpdateGoogleAccountTokens updates the OAuth tokens for a Google account
+func (s *UserService) UpdateGoogleAccountTokens(userID uint64, token *oauth2.Token) error {
+	return s.userRepo.UpdateGoogleAccountTokens(userID, token.AccessToken, token.RefreshToken, &token.Expiry)
+}
+
+// GetGoogleAccountByUserID retrieves a Google account by user ID
+func (s *UserService) GetGoogleAccountByUserID(userID uint64) (*model.Account, error) {
+	return s.userRepo.FindGoogleAccountByUserID(userID)
+}
+
+// UpdateUser updates an existing user
+func (s *UserService) UpdateUser(user *model.User) error {
+	return s.userRepo.Update(user)
+}
+
+// GetAccountsByUserID retrieves all accounts for a user
+func (s *UserService) GetAccountsByUserID(userID uint64) ([]model.Account, error) {
+	return s.userRepo.FindAccountsByUserID(userID)
+}
+
+// LinkGoogleAccount links a Google account to an existing user
+func (s *UserService) LinkGoogleAccount(userID uint64, googleID string, email string) error {
+	googleAccount := &model.Account{
+		ID:         utils.GenerateID(),
+		UserID:     userID,
+		Provider:   "google",
+		ProviderID: googleID,
+		Email:      &email,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 	}
 
-	return s.userRepo.CreateOrUpdateGoogleToken(googleToken)
-}
-
-// GetGoogleTokenByUserID retrieves a Google OAuth token by user ID
-func (s *UserService) GetGoogleTokenByUserID(userID uint64) (*model.GoogleToken, error) {
-	return s.userRepo.FindGoogleTokenByUserID(userID)
-}
-
-// DeleteGoogleTokenByUserID deletes a Google OAuth token by user ID
-func (s *UserService) DeleteGoogleTokenByUserID(userID uint64) error {
-	return s.userRepo.DeleteGoogleTokenByUserID(userID)
+	return s.userRepo.CreateAccount(googleAccount)
 }

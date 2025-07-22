@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type CalendarEventStatus string
 
 const (
@@ -34,6 +36,9 @@ type Calendar struct {
 	Name   string         `json:"name"`
 	Color  string         `json:"color"`
 	Status CalendarStatus `json:"status"`
+	SyncedAt time.Time      `json:"sync_at"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
 }
 
 // GoogleCalendar represents a calendar from Google Calendar API

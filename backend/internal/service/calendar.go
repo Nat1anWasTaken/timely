@@ -32,19 +32,24 @@ func NewCalendarService(userRepo *repository.UserRepository, oauthConfig *config
 
 // GetUserCalendars retrieves all calendars for a user from Google Calendar API
 func (s *CalendarService) GetUserCalendars(userID uint64) ([]*model.GoogleCalendar, error) {
-	// Get user's Google token
-	token, err := s.userRepo.FindGoogleTokenByUserID(userID)
+	// Get user's Google account
+	account, err := s.userRepo.FindGoogleAccountByUserID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Google token: %w", err)
+		return nil, fmt.Errorf("failed to get Google account: %w", err)
+	}
+
+	// Check if account has tokens
+	if account.AccessToken == nil || account.RefreshToken == nil {
+		return nil, fmt.Errorf("Google account not properly configured with OAuth tokens")
 	}
 
 	// Check if token needs refresh
-	if err := s.refreshTokenIfNeeded(token); err != nil {
+	if err := s.refreshTokenIfNeeded(account); err != nil {
 		return nil, fmt.Errorf("failed to refresh token: %w", err)
 	}
 
 	// Fetch calendars from Google API
-	calendars, err := s.fetchCalendarsFromGoogle(token.AccessToken)
+	calendars, err := s.fetchCalendarsFromGoogle(*account.AccessToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch calendars from Google: %w", err)
 	}
@@ -53,19 +58,19 @@ func (s *CalendarService) GetUserCalendars(userID uint64) ([]*model.GoogleCalend
 }
 
 // refreshTokenIfNeeded checks if the token is expired and refreshes it if necessary
-func (s *CalendarService) refreshTokenIfNeeded(token *model.GoogleToken) error {
+func (s *CalendarService) refreshTokenIfNeeded(account *model.Account) error {
 	// Check if token is expired (with 5 minute buffer)
-	if time.Now().Add(5 * time.Minute).Before(token.ExpiresAt) {
+	if account.Expiry == nil || time.Now().Add(5*time.Minute).Before(*account.Expiry) {
 		return nil // Token is still valid
 	}
 
-	s.logger.Info("Refreshing expired Google token", zap.Uint64("user_id", token.UserID))
+	s.logger.Info("Refreshing expired Google token", zap.Uint64("user_id", account.UserID))
 
 	// Create oauth2.Token for refresh
 	oauthToken := &oauth2.Token{
-		AccessToken:  token.AccessToken,
-		RefreshToken: token.RefreshToken,
-		Expiry:       token.ExpiresAt,
+		AccessToken:  *account.AccessToken,
+		RefreshToken: *account.RefreshToken,
+		Expiry:       *account.Expiry,
 	}
 
 	// Refresh the token using the injected OAuth config
@@ -76,16 +81,11 @@ func (s *CalendarService) refreshTokenIfNeeded(token *model.GoogleToken) error {
 	}
 
 	// Update the token in database
-	token.AccessToken = newToken.AccessToken
-	token.RefreshToken = newToken.RefreshToken
-	token.ExpiresAt = newToken.Expiry
-	token.UpdatedAt = time.Now()
-
-	if err := s.userRepo.CreateOrUpdateGoogleToken(token); err != nil {
+	if err := s.userRepo.UpdateGoogleAccountTokens(account.UserID, newToken.AccessToken, newToken.RefreshToken, &newToken.Expiry); err != nil {
 		return fmt.Errorf("failed to update token in database: %w", err)
 	}
 
-	s.logger.Info("Successfully refreshed Google token", zap.Uint64("user_id", token.UserID))
+	s.logger.Info("Successfully refreshed Google token", zap.Uint64("user_id", account.UserID))
 	return nil
 }
 
