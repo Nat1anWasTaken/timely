@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"golang.org/x/oauth2"
 	"gorm.io/gorm"
 
 	"github.com/NathanWasTaken/timely/backend/internal/model"
@@ -26,10 +27,19 @@ func NewUserService(userRepo *repository.UserRepository) *UserService {
 }
 
 // FindOrCreateGoogleUser finds an existing user by Google ID or email, or creates a new one
-func (s *UserService) FindOrCreateGoogleUser(googleUser *model.GoogleUserInfo) (*model.User, error) {
+func (s *UserService) FindOrCreateGoogleUser(googleUser *model.GoogleUserInfo, token *oauth2.Token) (*model.User, error) {
 	// First try to find by Google ID
 	if user, err := s.userRepo.FindByGoogleID(googleUser.ID); err == nil {
 		s.logger.Info("Found existing user by Google ID", zap.String("email", user.Email))
+
+		// Update OAuth token if provided
+		if token != nil {
+			if err := s.CreateOrUpdateGoogleToken(user.ID, token); err != nil {
+				s.logger.Error("Failed to update Google token", zap.Error(err))
+				// Don't fail the login if token storage fails, just log it
+			}
+		}
+
 		return user, nil
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
@@ -46,6 +56,14 @@ func (s *UserService) FindOrCreateGoogleUser(googleUser *model.GoogleUserInfo) (
 
 		if err := s.userRepo.Update(user); err != nil {
 			return nil, err
+		}
+
+		// Store OAuth token if provided
+		if token != nil {
+			if err := s.CreateOrUpdateGoogleToken(user.ID, token); err != nil {
+				s.logger.Error("Failed to store Google token", zap.Error(err))
+				// Don't fail the login if token storage fails, just log it
+			}
 		}
 
 		s.logger.Info("Linked Google account to existing user", zap.String("email", user.Email))
@@ -69,6 +87,14 @@ func (s *UserService) FindOrCreateGoogleUser(googleUser *model.GoogleUserInfo) (
 
 	if err := s.userRepo.Create(user); err != nil {
 		return nil, err
+	}
+
+	// Store OAuth token if provided
+	if token != nil {
+		if err := s.CreateOrUpdateGoogleToken(user.ID, token); err != nil {
+			s.logger.Error("Failed to store Google token for new user", zap.Error(err))
+			// Don't fail the registration if token storage fails, just log it
+		}
 	}
 
 	s.logger.Info("Created new user from Google OAuth", zap.String("email", user.Email))
@@ -170,4 +196,29 @@ func (s *UserService) generateUniqueUsername(name string) string {
 	// For now, just use the name and let GORM handle uniqueness constraints
 	// If there's a conflict, it will error and we can handle it appropriately
 	return baseUsername
+}
+
+// CreateOrUpdateGoogleToken creates or updates a Google OAuth token for a user
+func (s *UserService) CreateOrUpdateGoogleToken(userID uint64, token *oauth2.Token) error {
+	googleToken := &model.GoogleToken{
+		ID:           utils.GenerateID(),
+		UserID:       userID,
+		RefreshToken: token.RefreshToken,
+		AccessToken:  token.AccessToken,
+		ExpiresAt:    token.Expiry,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
+
+	return s.userRepo.CreateOrUpdateGoogleToken(googleToken)
+}
+
+// GetGoogleTokenByUserID retrieves a Google OAuth token by user ID
+func (s *UserService) GetGoogleTokenByUserID(userID uint64) (*model.GoogleToken, error) {
+	return s.userRepo.FindGoogleTokenByUserID(userID)
+}
+
+// DeleteGoogleTokenByUserID deletes a Google OAuth token by user ID
+func (s *UserService) DeleteGoogleTokenByUserID(userID uint64) error {
+	return s.userRepo.DeleteGoogleTokenByUserID(userID)
 }

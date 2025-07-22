@@ -79,3 +79,45 @@ func (r *UserRepository) ExistsByUsername(username string) (bool, error) {
 	err := r.db.Model(&model.User{}).Where("username = ?", username).Count(&count).Error
 	return count > 0, err
 }
+
+// GoogleToken repository methods
+
+// CreateOrUpdateGoogleToken creates or updates a Google OAuth token for a user
+func (r *UserRepository) CreateOrUpdateGoogleToken(token *model.GoogleToken) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// Check if token already exists for this user
+		var existingToken model.GoogleToken
+		err := tx.Where("user_id = ?", token.UserID).First(&existingToken).Error
+
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				// Token doesn't exist, create new one
+				return tx.Create(token).Error
+			}
+			// Return other database errors
+			return err
+		}
+
+		// Token exists, update it
+		existingToken.RefreshToken = token.RefreshToken
+		existingToken.AccessToken = token.AccessToken
+		existingToken.ExpiresAt = token.ExpiresAt
+		// Let GORM handle UpdatedAt automatically
+		return tx.Save(&existingToken).Error
+	})
+}
+
+// FindGoogleTokenByUserID finds a Google OAuth token by user ID
+func (r *UserRepository) FindGoogleTokenByUserID(userID uint64) (*model.GoogleToken, error) {
+	var token model.GoogleToken
+	err := r.db.Where("user_id = ?", userID).First(&token).Error
+	if err != nil {
+		return nil, err
+	}
+	return &token, nil
+}
+
+// DeleteGoogleTokenByUserID deletes a Google OAuth token by user ID
+func (r *UserRepository) DeleteGoogleTokenByUserID(userID uint64) error {
+	return r.db.Where("user_id = ?", userID).Delete(&model.GoogleToken{}).Error
+}

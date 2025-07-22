@@ -21,6 +21,18 @@ type User struct {
 	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`                                               // Soft delete timestamp (excluded from responses)
 }
 
+// GoogleToken represents a Google OAuth token and its metadata
+// @Description Google OAuth token information and metadata
+type GoogleToken struct {
+	ID           uint64    `json:"id,string" gorm:"primaryKey" example:"123456789"`       // Unique token identifier
+	UserID       uint64    `json:"user_id,string" gorm:"not null" example:"123456789"`    // Associated user ID
+	RefreshToken string    `json:"refresh_token" gorm:"not null" example:"1//04dXy7..."`  // Long-lived Google refresh token
+	AccessToken  string    `json:"access_token" gorm:"not null" example:"ya29.a0AfH6..."` // Short-lived Google access token
+	ExpiresAt    time.Time `json:"expires_at" example:"2024-01-01T00:00:00Z"`             // Access token expiration timestamp
+	CreatedAt    time.Time `json:"created_at" example:"2024-01-01T00:00:00Z"`             // Token creation timestamp
+	UpdatedAt    time.Time `json:"updated_at" example:"2024-01-01T00:00:00Z"`             // Token last update timestamp
+}
+
 // GoogleUserInfo represents user information from Google OAuth
 // @Description Google OAuth user information
 type GoogleUserInfo struct {

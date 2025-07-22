@@ -126,7 +126,7 @@ func (h *GoogleOAuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Find or create user in database
-	user, err := h.oauthService.FindOrCreateUserFromGoogle(googleUser)
+	user, err := h.oauthService.FindOrCreateUserFromGoogleWithToken(googleUser, token)
 	if err != nil {
 		h.logger.Error("Failed to find or create user", zap.Error(err))
 		http.Error(w, "Failed to process user", http.StatusInternalServerError)

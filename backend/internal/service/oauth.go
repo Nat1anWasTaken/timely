@@ -76,5 +76,15 @@ func (s *OAuthService) GetUserInfoFromGoogle(ctx context.Context, token *oauth2.
 
 // FindOrCreateUserFromGoogle finds or creates a user from Google OAuth info
 func (s *OAuthService) FindOrCreateUserFromGoogle(googleUser *model.GoogleUserInfo) (*model.User, error) {
-	return s.userService.FindOrCreateGoogleUser(googleUser)
+	return s.userService.FindOrCreateGoogleUser(googleUser, nil)
+}
+
+// FindOrCreateUserFromGoogleWithToken finds or creates a user from Google OAuth info and stores the OAuth token
+func (s *OAuthService) FindOrCreateUserFromGoogleWithToken(googleUser *model.GoogleUserInfo, token *oauth2.Token) (*model.User, error) {
+	return s.userService.FindOrCreateGoogleUser(googleUser, token)
+}
+
+// GetUserGoogleToken retrieves the stored Google OAuth token for a user
+func (s *OAuthService) GetUserGoogleToken(userID uint64) (*model.GoogleToken, error) {
+	return s.userService.GetGoogleTokenByUserID(userID)
 }
