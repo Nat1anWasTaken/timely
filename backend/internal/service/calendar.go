@@ -396,3 +396,64 @@ func (s *CalendarService) convertGoogleEventToCalendarEvent(googleEvent *model.G
 
 	return event, nil
 }
+
+// GetUserCalendarEvents retrieves all events for a user's calendars within a specified time range
+func (s *CalendarService) GetUserCalendarEvents(userID uint64, startTime, endTime time.Time) ([]*model.CalendarWithEvents, error) {
+	// Validate time range (max 3 months)
+	threeMonths := startTime.AddDate(0, 3, 0)
+	if endTime.After(threeMonths) {
+		return nil, fmt.Errorf("time range cannot exceed 3 months")
+	}
+
+	// Get all user's calendars
+	calendars, err := s.calendarRepo.FindByUserID(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user calendars: %w", err)
+	}
+
+	if len(calendars) == 0 {
+		return []*model.CalendarWithEvents{}, nil
+	}
+
+	// Extract calendar IDs
+	var calendarIDs []uint64
+	for _, calendar := range calendars {
+		calendarIDs = append(calendarIDs, calendar.ID)
+	}
+
+	// Get events for all calendars within time range
+	events, err := s.calendarRepo.FindEventsByCalendarIDsAndTimeRange(calendarIDs, startTime, endTime)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get calendar events: %w", err)
+	}
+
+	// Group events by calendar ID
+	eventsByCalendar := make(map[uint64][]*model.CalendarEvent)
+	for _, event := range events {
+		eventsByCalendar[event.CalendarID] = append(eventsByCalendar[event.CalendarID], event)
+	}
+
+	// Create nested response structure
+	var calendarsWithEvents []*model.CalendarWithEvents
+	for _, calendar := range calendars {
+		calendarEvents := eventsByCalendar[calendar.ID]
+		if calendarEvents == nil {
+			calendarEvents = []*model.CalendarEvent{}
+		}
+
+		calendarWithEvents := &model.CalendarWithEvents{
+			Calendar: calendar,
+			Events:   calendarEvents,
+		}
+		calendarsWithEvents = append(calendarsWithEvents, calendarWithEvents)
+	}
+
+	s.logger.Info("Successfully retrieved calendar events",
+		zap.Uint64("user_id", userID),
+		zap.Int("calendar_count", len(calendars)),
+		zap.Int("total_events", len(events)),
+		zap.Time("start_time", startTime),
+		zap.Time("end_time", endTime))
+
+	return calendarsWithEvents, nil
+}

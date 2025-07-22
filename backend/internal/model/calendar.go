@@ -151,3 +151,25 @@ type GoogleCalendarEventsResponse struct {
 	TimeZone string                 `json:"timeZone" example:"America/Los_Angeles"`
 	Items    []*GoogleCalendarEvent `json:"items"`
 }
+
+// CalendarEventsRequest represents the request for getting calendar events
+// @Description Calendar events request with time range
+type CalendarEventsRequest struct {
+	StartTime string `json:"start_time" validate:"required" example:"2024-01-01T00:00:00Z"`
+	EndTime   string `json:"end_time" validate:"required" example:"2024-01-31T23:59:59Z"`
+}
+
+// CalendarWithEvents represents a calendar with its events
+// @Description Calendar with events
+type CalendarWithEvents struct {
+	*Calendar
+	Events []*CalendarEvent `json:"events"`
+}
+
+// CalendarEventsResponse represents the response for calendar events endpoint
+// @Description Calendar events response
+type CalendarEventsResponse struct {
+	Success   bool                  `json:"success" example:"true"`
+	Message   string                `json:"message" example:"Calendar events retrieved successfully"`
+	Calendars []*CalendarWithEvents `json:"calendars"`
+}

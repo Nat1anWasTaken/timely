@@ -196,6 +196,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/calendar/events": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves all events for user's calendars within a specified time range (max 3 months)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Calendar"
+                ],
+                "summary": "Get Calendar Events",
+                "parameters": [
+                    {
+                        "description": "Time range request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CalendarEventsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Events retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.CalendarEventsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid request body or time range",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/calendar/google": {
             "get": {
                 "security": [
@@ -448,6 +505,119 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CalendarEvent": {
+            "description": "Calendar event",
+            "type": "object",
+            "properties": {
+                "allDay": {
+                    "description": "True if it's an all-day event",
+                    "type": "boolean"
+                },
+                "calendar_id": {
+                    "description": "calendar ID",
+                    "type": "string",
+                    "example": "0"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "description": "Optional description",
+                    "type": "string"
+                },
+                "end": {
+                    "description": "ISO8601 datetime or date",
+                    "type": "string"
+                },
+                "event_color": {
+                    "description": "Optional display color",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Google Event ID",
+                    "type": "string",
+                    "example": "0"
+                },
+                "location": {
+                    "description": "Optional event location",
+                    "type": "string"
+                },
+                "source_id": {
+                    "description": "Source calendar ID",
+                    "type": "string"
+                },
+                "start": {
+                    "description": "ISO8601 datetime or date (for all-day)",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "Event title (summary)",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "visibility": {
+                    "description": "public / private / default",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.CalendarEventVisibility"
+                        }
+                    ]
+                }
+            }
+        },
+        "model.CalendarEventVisibility": {
+            "type": "string",
+            "enum": [
+                "public",
+                "private",
+                "inherited"
+            ],
+            "x-enum-varnames": [
+                "CalendarEventVisibilityPublic",
+                "CalendarEventVisibilityPrivate",
+                "CalendarEventVisibilityInherited"
+            ]
+        },
+        "model.CalendarEventsRequest": {
+            "description": "Calendar events request with time range",
+            "type": "object",
+            "required": [
+                "end_time",
+                "start_time"
+            ],
+            "properties": {
+                "end_time": {
+                    "type": "string",
+                    "example": "2024-01-31T23:59:59Z"
+                },
+                "start_time": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "model.CalendarEventsResponse": {
+            "description": "Calendar events response",
+            "type": "object",
+            "properties": {
+                "calendars": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CalendarWithEvents"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Calendar events retrieved successfully"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
         "model.CalendarListResponse": {
             "description": "Calendar list response",
             "type": "object",
@@ -489,6 +659,59 @@ const docTemplate = `{
                 "CalendarVisibilityPublic",
                 "CalendarVisibilityPrivate"
             ]
+        },
+        "model.CalendarWithEvents": {
+            "description": "Calendar with events",
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "event_color": {
+                    "type": "string"
+                },
+                "event_nickname": {
+                    "type": "string"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CalendarEvent"
+                    }
+                },
+                "id": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "source": {
+                    "$ref": "#/definitions/model.CalendarSource"
+                },
+                "source_id": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "synced_at": {
+                    "type": "string"
+                },
+                "time_zone": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "visibility": {
+                    "$ref": "#/definitions/model.CalendarVisibility"
+                }
+            }
         },
         "model.ErrorResponse": {
             "description": "Error response structure",

@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 
 	"github.com/NathanWasTaken/timely/backend/internal/model"
@@ -117,4 +119,16 @@ func (r *CalendarRepository) ExistsEventBySourceID(sourceID string) (bool, error
 	var count int64
 	err := r.db.Model(&model.CalendarEvent{}).Where("source_id = ?", sourceID).Count(&count).Error
 	return count > 0, err
+}
+
+// FindEventsByCalendarIDsAndTimeRange finds events for specific calendars within a time range
+func (r *CalendarRepository) FindEventsByCalendarIDsAndTimeRange(calendarIDs []uint64, startTime, endTime time.Time) ([]*model.CalendarEvent, error) {
+	var events []*model.CalendarEvent
+	err := r.db.Where("calendar_id IN ? AND start >= ? AND end <= ?", calendarIDs, startTime, endTime).
+		Order("start ASC").
+		Find(&events).Error
+	if err != nil {
+		return nil, err
+	}
+	return events, nil
 }

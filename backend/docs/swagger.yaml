@@ -93,6 +93,87 @@ definitions:
       visibility:
         $ref: '#/definitions/model.CalendarVisibility'
     type: object
+  model.CalendarEvent:
+    description: Calendar event
+    properties:
+      allDay:
+        description: True if it's an all-day event
+        type: boolean
+      calendar_id:
+        description: calendar ID
+        example: "0"
+        type: string
+      created_at:
+        type: string
+      description:
+        description: Optional description
+        type: string
+      end:
+        description: ISO8601 datetime or date
+        type: string
+      event_color:
+        description: Optional display color
+        type: string
+      id:
+        description: Google Event ID
+        example: "0"
+        type: string
+      location:
+        description: Optional event location
+        type: string
+      source_id:
+        description: Source calendar ID
+        type: string
+      start:
+        description: ISO8601 datetime or date (for all-day)
+        type: string
+      title:
+        description: Event title (summary)
+        type: string
+      updated_at:
+        type: string
+      visibility:
+        allOf:
+        - $ref: '#/definitions/model.CalendarEventVisibility'
+        description: public / private / default
+    type: object
+  model.CalendarEventVisibility:
+    enum:
+    - public
+    - private
+    - inherited
+    type: string
+    x-enum-varnames:
+    - CalendarEventVisibilityPublic
+    - CalendarEventVisibilityPrivate
+    - CalendarEventVisibilityInherited
+  model.CalendarEventsRequest:
+    description: Calendar events request with time range
+    properties:
+      end_time:
+        example: "2024-01-31T23:59:59Z"
+        type: string
+      start_time:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    required:
+    - end_time
+    - start_time
+    type: object
+  model.CalendarEventsResponse:
+    description: Calendar events response
+    properties:
+      calendars:
+        items:
+          $ref: '#/definitions/model.CalendarWithEvents'
+        type: array
+      message:
+        example: Calendar events retrieved successfully
+        type: string
+      success:
+        example: true
+        type: boolean
+    type: object
   model.CalendarListResponse:
     description: Calendar list response
     properties:
@@ -123,6 +204,42 @@ definitions:
     x-enum-varnames:
     - CalendarVisibilityPublic
     - CalendarVisibilityPrivate
+  model.CalendarWithEvents:
+    description: Calendar with events
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      event_color:
+        type: string
+      event_nickname:
+        type: string
+      events:
+        items:
+          $ref: '#/definitions/model.CalendarEvent'
+        type: array
+      id:
+        example: "0"
+        type: string
+      source:
+        $ref: '#/definitions/model.CalendarSource'
+      source_id:
+        type: string
+      summary:
+        type: string
+      synced_at:
+        type: string
+      time_zone:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        example: "0"
+        type: string
+      visibility:
+        $ref: '#/definitions/model.CalendarVisibility'
+    type: object
   model.ErrorResponse:
     description: Error response structure
     properties:
@@ -413,6 +530,43 @@ paths:
       summary: User Registration
       tags:
       - Authentication
+  /api/calendar/events:
+    post:
+      consumes:
+      - application/json
+      description: Retrieves all events for user's calendars within a specified time
+        range (max 3 months)
+      parameters:
+      - description: Time range request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CalendarEventsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Events retrieved successfully
+          schema:
+            $ref: '#/definitions/model.CalendarEventsResponse'
+        "400":
+          description: Bad Request - Invalid request body or time range
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized - Authentication required
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Calendar Events
+      tags:
+      - Calendar
   /api/calendar/google:
     get:
       consumes:

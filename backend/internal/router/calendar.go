@@ -36,5 +36,8 @@ func CalendarRouter(r chi.Router) {
 			r.Get("/", googleCalendarHandler.GetCalendars)
 			r.Post("/", googleCalendarHandler.ImportCalendar)
 		})
+
+		// Calendar events endpoint
+		r.Post("/events", googleCalendarHandler.GetCalendarEvents)
 	})
 }
