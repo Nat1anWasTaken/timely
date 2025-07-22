@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@tanstack/svelte-query':
+        specifier: ^5.83.0
+        version: 5.83.0(svelte@5.36.12)
       calendar-js:
         specifier: ^1.4.4
         version: 1.4.4
@@ -78,6 +81,9 @@ importers:
       svelte-check:
         specifier: ^4.0.0
         version: 4.3.0(picomatch@4.0.3)(svelte@5.36.12)(typescript@5.8.3)
+      svelte-sonner:
+        specifier: ^1.0.5
+        version: 1.0.5(svelte@5.36.12)
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.3.1
@@ -614,6 +620,14 @@ packages:
     resolution: {integrity: sha512-RHYhrR3hku0MJFRV+fN2gNbDNEh3dwKvY8XJvTxCSXeMOsCRSr+uKvDWQcbizrHgjML6ZmTE5OwMrl5wKcujCw==}
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7
+
+  '@tanstack/query-core@5.83.0':
+    resolution: {integrity: sha512-0M8dA+amXUkyz5cVUm/B+zSk3xkQAcuXuz5/Q/LveT4ots2rBpPTZOzd7yJa2Utsf8D2Upl5KyjhHRY+9lB/XA==}
+
+  '@tanstack/svelte-query@5.83.0':
+    resolution: {integrity: sha512-8tNXhuoizntZXnAzo4yqUWgZZnklQkXGUNpb3YreW68DyCBhhrGbErnrODQs3fVc2ABcMvAHIki5uErbdzXH1A==}
+    peerDependencies:
+      svelte: ^3.54.0 || ^4.0.0 || ^5.0.0
 
   '@types/cookie@0.6.0':
     resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
@@ -1347,6 +1361,11 @@ packages:
     peerDependencies:
       svelte: ^5.7.0
 
+  runed@0.28.0:
+    resolution: {integrity: sha512-k2xx7RuO9hWcdd9f+8JoBeqWtYrm5CALfgpkg2YDB80ds/QE4w0qqu34A7fqiAwiBBSBQOid7TLxwxVC27ymWQ==}
+    peerDependencies:
+      svelte: ^5.7.0
+
   runed@0.29.2:
     resolution: {integrity: sha512-0cq6cA6sYGZwl/FvVqjx9YN+1xEBu9sDDyuWdDW1yWX7JF2wmvmVKfH+hVCZs+csW+P3ARH92MjI3H9QTagOQA==}
     peerDependencies:
@@ -1407,6 +1426,11 @@ packages:
     peerDependenciesMeta:
       svelte:
         optional: true
+
+  svelte-sonner@1.0.5:
+    resolution: {integrity: sha512-9dpGPFqKb/QWudYqGnEz93vuY+NgCEvyNvxoCLMVGw6sDN/3oVeKV1xiEirW2E1N3vJEyj5imSBNOGltQHA7mg==}
+    peerDependencies:
+      svelte: ^5.0.0
 
   svelte-toolbelt@0.7.1:
     resolution: {integrity: sha512-HcBOcR17Vx9bjaOceUvxkY3nGmbBmCBBbuWLLEWO6jtmWH8f/QoWmbyUfQZrpDINH39en1b8mptfPQT9VKQ1xQ==}
@@ -1960,6 +1984,13 @@ snapshots:
       '@tailwindcss/oxide': 4.1.11
       tailwindcss: 4.1.11
       vite: 7.0.5(jiti@2.4.2)(lightningcss@1.30.1)
+
+  '@tanstack/query-core@5.83.0': {}
+
+  '@tanstack/svelte-query@5.83.0(svelte@5.36.12)':
+    dependencies:
+      '@tanstack/query-core': 5.83.0
+      svelte: 5.36.12
 
   '@types/cookie@0.6.0': {}
 
@@ -2635,6 +2666,11 @@ snapshots:
       esm-env: 1.2.2
       svelte: 5.36.12
 
+  runed@0.28.0(svelte@5.36.12):
+    dependencies:
+      esm-env: 1.2.2
+      svelte: 5.36.12
+
   runed@0.29.2(svelte@5.36.12):
     dependencies:
       esm-env: 1.2.2
@@ -2693,6 +2729,11 @@ snapshots:
       postcss-scss: 4.0.9(postcss@8.5.6)
       postcss-selector-parser: 7.1.0
     optionalDependencies:
+      svelte: 5.36.12
+
+  svelte-sonner@1.0.5(svelte@5.36.12):
+    dependencies:
+      runed: 0.28.0(svelte@5.36.12)
       svelte: 5.36.12
 
   svelte-toolbelt@0.7.1(svelte@5.36.12):
