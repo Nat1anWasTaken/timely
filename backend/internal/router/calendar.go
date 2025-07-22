@@ -15,12 +15,13 @@ func CalendarRouter(r chi.Router) {
 	// Initialize database dependencies
 	dbConfig := config.NewDatabaseConfig()
 	userRepo := repository.NewUserRepository(dbConfig.GetDB())
+	calendarRepo := repository.NewCalendarRepository(dbConfig.GetDB())
 
 	// Initialize OAuth dependencies
 	oauthConfig := config.NewOAuthConfig()
 
 	// Initialize services
-	calendarService := service.NewCalendarService(userRepo, oauthConfig)
+	calendarService := service.NewCalendarService(userRepo, calendarRepo, oauthConfig)
 
 	// Initialize handlers
 	googleCalendarHandler := calendar.NewGoogleCalendarHandler(calendarService)
@@ -32,7 +33,8 @@ func CalendarRouter(r chi.Router) {
 
 		// Google Calendar endpoints
 		r.Route("/google", func(r chi.Router) {
-			r.Get("/calendars", googleCalendarHandler.GetCalendars)
+			r.Get("/", googleCalendarHandler.GetCalendars)
+			r.Post("/", googleCalendarHandler.ImportCalendar)
 		})
 	})
 }

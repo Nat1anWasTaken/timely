@@ -14,6 +14,7 @@ import (
 	"github.com/NathanWasTaken/timely/backend/internal/config"
 	"github.com/NathanWasTaken/timely/backend/internal/model"
 	"github.com/NathanWasTaken/timely/backend/internal/router"
+	"github.com/NathanWasTaken/timely/backend/pkg/logger"
 	"github.com/NathanWasTaken/timely/backend/pkg/utils"
 
 	_ "github.com/NathanWasTaken/timely/backend/docs"
@@ -50,6 +51,8 @@ func Run() {
 	// Initialize Snowflake ID generator
 	utils.InitSnowflake(1) // Node ID 1 for this instance
 	log.Println("Snowflake ID generator initialized")
+
+	logger.Init(os.Getenv("GO_ENV"))
 
 	DatabaseInit()
 
@@ -107,6 +110,7 @@ func DatabaseInit() {
 	// Auto-migrate the schema
 	if err := dbConfig.GetDB().AutoMigrate(
 		&model.User{},
+		&model.Calendar{},
 		&model.Account{},
 	); err != nil {
 		log.Fatal("Failed to migrate database: " + err.Error())

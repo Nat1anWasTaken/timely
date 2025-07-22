@@ -14,19 +14,22 @@ import (
 	"github.com/NathanWasTaken/timely/backend/internal/config"
 	"github.com/NathanWasTaken/timely/backend/internal/model"
 	"github.com/NathanWasTaken/timely/backend/internal/repository"
+	"github.com/NathanWasTaken/timely/backend/pkg/utils"
 )
 
 type CalendarService struct {
-	userRepo    *repository.UserRepository
-	oauthConfig *config.OAuthConfig
-	logger      *zap.Logger
+	userRepo     *repository.UserRepository
+	calendarRepo *repository.CalendarRepository
+	oauthConfig  *config.OAuthConfig
+	logger       *zap.Logger
 }
 
-func NewCalendarService(userRepo *repository.UserRepository, oauthConfig *config.OAuthConfig) *CalendarService {
+func NewCalendarService(userRepo *repository.UserRepository, calendarRepo *repository.CalendarRepository, oauthConfig *config.OAuthConfig) *CalendarService {
 	return &CalendarService{
-		userRepo:    userRepo,
-		oauthConfig: oauthConfig,
-		logger:      zap.L(),
+		userRepo:     userRepo,
+		calendarRepo: calendarRepo,
+		oauthConfig:  oauthConfig,
+		logger:       zap.L(),
 	}
 }
 
@@ -40,7 +43,7 @@ func (s *CalendarService) GetUserCalendars(userID uint64) ([]*model.GoogleCalend
 
 	// Check if account has tokens
 	if account.AccessToken == nil || account.RefreshToken == nil {
-		return nil, fmt.Errorf("Google account not properly configured with OAuth tokens")
+		return nil, fmt.Errorf("google account not properly configured with OAuth tokens")
 	}
 
 	// Check if token needs refresh
@@ -119,4 +122,94 @@ func (s *CalendarService) fetchCalendarsFromGoogle(accessToken string) ([]*model
 	}
 
 	return calendarList.Items, nil
+}
+
+// ImportCalendar imports a Google calendar to the database
+func (s *CalendarService) ImportCalendar(userID uint64, calendarID string) (*model.Calendar, error) {
+	// Get user's Google account
+	account, err := s.userRepo.FindGoogleAccountByUserID(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Google account: %w", err)
+	}
+
+	// Check if account has tokens
+	if account.AccessToken == nil || account.RefreshToken == nil {
+		return nil, fmt.Errorf("google account not properly configured with OAuth tokens")
+	}
+
+	// Check if token needs refresh
+	if err := s.refreshTokenIfNeeded(account); err != nil {
+		return nil, fmt.Errorf("failed to refresh token: %w", err)
+	}
+
+	// Fetch specific calendar from Google API
+	googleCalendar, err := s.fetchCalendarFromGoogle(*account.AccessToken, calendarID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch calendar from Google: %w", err)
+	}
+
+	// Check if calendar already exists for this user
+	exists, err := s.calendarRepo.ExistsByUserIDAndSourceID(userID, calendarID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if calendar exists: %w", err)
+	}
+
+	if exists {
+		return nil, fmt.Errorf("calendar already imported")
+	}
+	s.logger.Info("Google calendar", zap.Any("googleCalendar", googleCalendar))
+	// Convert Google calendar to our Calendar model
+	calendar := &model.Calendar{
+		ID:          utils.GenerateID(),
+		UserID:      userID,
+		SourceID:    &calendarID,
+		Source:      model.SourceGoogle,
+		Summary:     googleCalendar.Summary,
+		TimeZone:    googleCalendar.TimeZone,
+		EventColor:  &googleCalendar.BackgroundColor,
+		Description: &googleCalendar.Description,
+		Status:      model.CalendarStatusPublic, // Default to public
+		SyncedAt:    time.Now(),
+	}
+
+	// Save to database
+	if err := s.calendarRepo.Create(calendar); err != nil {
+		return nil, fmt.Errorf("failed to save calendar to database: %w", err)
+	}
+
+	s.logger.Info("Successfully imported calendar",
+		zap.Uint64("user_id", userID),
+		zap.String("calendar_id", calendarID),
+		zap.String("summary", googleCalendar.Summary))
+
+	return calendar, nil
+}
+
+// fetchCalendarFromGoogle calls the Google Calendar API to get a specific calendar
+func (s *CalendarService) fetchCalendarFromGoogle(accessToken, calendarID string) (*model.GoogleCalendar, error) {
+	// Create HTTP client with OAuth2 transport
+	ctx := context.Background()
+	oauthToken := &oauth2.Token{AccessToken: accessToken}
+	client := s.oauthConfig.Google.Client(ctx, oauthToken)
+
+	// Call Google Calendar API for specific calendar
+	url := fmt.Sprintf("https://www.googleapis.com/calendar/v3/calendars/%s", calendarID)
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call Google Calendar API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("google Calendar API error: status %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	// Parse response
+	var googleCalendar model.GoogleCalendar
+	if err := json.NewDecoder(resp.Body).Decode(&googleCalendar); err != nil {
+		return nil, fmt.Errorf("failed to decode Google Calendar API response: %w", err)
+	}
+
+	return &googleCalendar, nil
 }

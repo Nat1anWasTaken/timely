@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type CalendarEventStatus string
 
@@ -17,6 +21,13 @@ const (
 	CalendarStatusPrivate CalendarStatus = "private"
 )
 
+type CalendarSource string
+
+const (
+	SourceGoogle CalendarSource = "google"
+	SourceISC    CalendarSource = "isc"
+)
+
 // CalendarEvent represents an event in the calendar
 // @Description Calendar event
 type CalendarEvent struct {
@@ -31,14 +42,20 @@ type CalendarEvent struct {
 // Calendar represents a calendar
 // @Description Calendar
 type Calendar struct {
-	ID     uint64         `json:"id,string"`
-	UserID uint64         `json:"user_id,string"`
-	Name   string         `json:"name"`
-	Color  string         `json:"color"`
-	Status CalendarStatus `json:"status"`
-	SyncedAt time.Time      `json:"sync_at"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	ID              uint64         `json:"id,string" gorm:"primaryKey"`
+	UserID          uint64         `json:"user_id,string" gorm:"index"`
+	SourceID        *string        `json:"source_id"`
+	Source          CalendarSource `json:"source"`
+	Summary         string         `json:"summary"`
+	TimeZone        string         `json:"time_zone"`
+	Description     *string        `json:"description,omitempty"`
+	EventNickname   *string        `json:"event_nickname,omitempty"`
+	EventColor      *string        `json:"event_color,omitempty"`
+	Status          CalendarStatus `json:"status"`
+	SyncedAt        time.Time      `json:"synced_at"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	DeletedAt       gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
 // GoogleCalendar represents a calendar from Google Calendar API

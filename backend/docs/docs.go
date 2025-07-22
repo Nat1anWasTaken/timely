@@ -71,9 +71,26 @@ const docTemplate = `{
                     "OAuth"
                 ],
                 "summary": "Initiate Google OAuth Login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "OAuth mode: login or link",
+                        "name": "mode",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Original redirect page (for login mode)",
+                        "name": "from",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "307": {
                         "description": "Redirect to Google OAuth consent page"
+                    },
+                    "400": {
+                        "description": "Bad request - Authentication required for link mode"
                     },
                     "500": {
                         "description": "Internal server error"
@@ -179,7 +196,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/calendar/google/calendars": {
+        "/api/calendar/google": {
             "get": {
                 "security": [
                     {
@@ -223,10 +240,138 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Imports a specific Google calendar to the user's database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Calendar"
+                ],
+                "summary": "Import Google Calendar",
+                "parameters": [
+                    {
+                        "description": "Import calendar request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/calendar.ImportCalendarRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Calendar imported successfully",
+                        "schema": {
+                            "$ref": "#/definitions/calendar.ImportCalendarResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Google token not found or calendar not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - Calendar already imported",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
             }
         }
     },
     "definitions": {
+        "calendar.ImportCalendarRequest": {
+            "type": "object",
+            "required": [
+                "calendar_id"
+            ],
+            "properties": {
+                "calendar_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "calendar.ImportCalendarResponse": {
+            "type": "object",
+            "properties": {
+                "calendar": {
+                    "$ref": "#/definitions/model.Calendar"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "model.Account": {
+            "description": "OAuth account information",
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "description": "e.g. example@gmail.com",
+                    "type": "string"
+                },
+                "expiry": {
+                    "description": "Access token expiry",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "provider": {
+                    "description": "e.g. \"google\", \"github\"",
+                    "type": "string"
+                },
+                "provider_id": {
+                    "description": "e.g. Google sub, GitHub ID",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "0"
+                }
+            }
+        },
         "model.AuthResponse": {
             "description": "Successful authentication response",
             "type": "object",
@@ -256,6 +401,53 @@ const docTemplate = `{
                 }
             }
         },
+        "model.Calendar": {
+            "description": "Calendar",
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "event_color": {
+                    "type": "string"
+                },
+                "event_nickname": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "0"
+                },
+                "source": {
+                    "$ref": "#/definitions/model.CalendarSource"
+                },
+                "source_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.CalendarStatus"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "synced_at": {
+                    "type": "string"
+                },
+                "time_zone": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "0"
+                }
+            }
+        },
         "model.CalendarListResponse": {
             "description": "Calendar list response",
             "type": "object",
@@ -275,6 +467,28 @@ const docTemplate = `{
                     "example": true
                 }
             }
+        },
+        "model.CalendarSource": {
+            "type": "string",
+            "enum": [
+                "google",
+                "isc"
+            ],
+            "x-enum-varnames": [
+                "SourceGoogle",
+                "SourceISC"
+            ]
+        },
+        "model.CalendarStatus": {
+            "type": "string",
+            "enum": [
+                "public",
+                "private"
+            ],
+            "x-enum-varnames": [
+                "CalendarStatusPublic",
+                "CalendarStatusPrivate"
+            ]
         },
         "model.ErrorResponse": {
             "description": "Error response structure",
@@ -447,6 +661,13 @@ const docTemplate = `{
             "description": "User account information",
             "type": "object",
             "properties": {
+                "accounts": {
+                    "description": "Associated OAuth accounts",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Account"
+                    }
+                },
                 "created_at": {
                     "description": "Account creation timestamp",
                     "type": "string",
@@ -456,16 +677,6 @@ const docTemplate = `{
                     "description": "User's display name",
                     "type": "string",
                     "example": "John Doe"
-                },
-                "email": {
-                    "description": "User's email address",
-                    "type": "string",
-                    "example": "user@example.com"
-                },
-                "google_id": {
-                    "description": "Google OAuth ID",
-                    "type": "string",
-                    "example": "123456789"
                 },
                 "id": {
                     "description": "Unique user identifier",
