@@ -136,3 +136,16 @@ func (r *UserRepository) UpdateGoogleAccountTokens(userID uint64, accessToken, r
 			"expiry":        expiry,
 		}).Error
 }
+
+// FindUsersWithGoogleAccounts finds all users who have Google accounts
+func (r *UserRepository) FindUsersWithGoogleAccounts() ([]*model.User, error) {
+	var users []*model.User
+	err := r.db.Joins("JOIN accounts ON users.id = accounts.user_id").
+		Where("accounts.provider = ? AND accounts.access_token IS NOT NULL AND accounts.refresh_token IS NOT NULL", "google").
+		Distinct("users.*").
+		Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}

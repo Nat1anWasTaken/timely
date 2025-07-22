@@ -132,3 +132,42 @@ func (r *CalendarRepository) FindEventsByCalendarIDsAndTimeRange(calendarIDs []u
 	}
 	return events, nil
 }
+
+// FindBySourceID finds a calendar by its source ID
+func (r *CalendarRepository) FindBySourceID(sourceID string) (*model.Calendar, error) {
+	var calendar model.Calendar
+	err := r.db.Where("source_id = ?", sourceID).First(&calendar).Error
+	if err != nil {
+		return nil, err
+	}
+	return &calendar, nil
+}
+
+// UpdateEvents updates multiple calendar events in a batch
+func (r *CalendarRepository) UpdateEvents(events []*model.CalendarEvent) error {
+	if len(events) == 0 {
+		return nil
+	}
+
+	// Update each event individually since GORM doesn't have a batch update for complex updates
+	tx := r.db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	for _, event := range events {
+		if err := tx.Save(event).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit().Error
+}
+
+// UpdateSyncedAt updates the synced_at timestamp for a calendar
+func (r *CalendarRepository) UpdateSyncedAt(calendarID uint64, syncedAt time.Time) error {
+	return r.db.Model(&model.Calendar{}).
+		Where("id = ?", calendarID).
+		Update("synced_at", syncedAt).Error
+}

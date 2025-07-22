@@ -274,3 +274,4 @@ func (s *UserService) LinkGoogleAccount(userID uint64, googleID string, email st
 
 	return s.userRepo.CreateAccount(googleAccount)
 }
+

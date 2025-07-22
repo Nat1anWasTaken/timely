@@ -389,6 +389,18 @@ definitions:
         example: johndoe
         type: string
     type: object
+  model.UserProfileResponse:
+    description: User profile response
+    properties:
+      message:
+        example: User profile retrieved successfully
+        type: string
+      success:
+        example: true
+        type: boolean
+      user:
+        $ref: '#/definitions/model.User'
+    type: object
 info:
   contact: {}
 paths:
@@ -532,6 +544,10 @@ paths:
         name: end_timestamp
         required: true
         type: string
+      - description: Force sync from Google API regardless of cache
+        in: query
+        name: force_sync
+        type: boolean
       produces:
       - application/json
       responses:
@@ -561,6 +577,11 @@ paths:
       consumes:
       - application/json
       description: Retrieves all Google calendars for the authenticated user
+      parameters:
+      - description: Force sync from Google API regardless of cache
+        in: query
+        name: force_sync
+        type: boolean
       produces:
       - application/json
       responses:
@@ -628,4 +649,34 @@ paths:
       summary: Import Google Calendar
       tags:
       - Calendar
+  /api/user/profile:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the authenticated user's profile information from JWT
+        token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile retrieved successfully
+          schema:
+            $ref: '#/definitions/model.UserProfileResponse'
+        "401":
+          description: Unauthorized - Authentication required
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get User Profile
+      tags:
+      - User
 swagger: "2.0"

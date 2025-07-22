@@ -225,6 +225,12 @@ const docTemplate = `{
                         "name": "end_timestamp",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Force sync from Google API regardless of cache",
+                        "name": "force_sync",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -273,6 +279,14 @@ const docTemplate = `{
                     "Calendar"
                 ],
                 "summary": "Get User Calendars",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Force sync from Google API regardless of cache",
+                        "name": "force_sync",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Calendars retrieved successfully",
@@ -355,6 +369,52 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Conflict - Calendar already imported",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/user/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves the authenticated user's profile information from JWT token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get User Profile",
+                "responses": {
+                    "200": {
+                        "description": "User profile retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.UserProfileResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
                         "schema": {
                             "$ref": "#/definitions/model.ErrorResponse"
                         }
@@ -908,6 +968,23 @@ const docTemplate = `{
                     "description": "Username",
                     "type": "string",
                     "example": "johndoe"
+                }
+            }
+        },
+        "model.UserProfileResponse": {
+            "description": "User profile response",
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "User profile retrieved successfully"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "user": {
+                    "$ref": "#/definitions/model.User"
                 }
             }
         }

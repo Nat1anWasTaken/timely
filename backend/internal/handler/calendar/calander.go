@@ -20,6 +20,7 @@ import (
 // @Security BearerAuth
 // @Param start_timestamp query string true "Start timestamp in Unix format"
 // @Param end_timestamp query string true "End timestamp in Unix format"
+// @Param force_sync query bool false "Force sync from Google API regardless of cache"
 // @Success 200 {object} model.CalendarEventsResponse "Events retrieved successfully"
 // @Failure 400 {object} model.ErrorResponse "Bad Request - Invalid query parameters or time range"
 // @Failure 401 {object} model.ErrorResponse "Unauthorized - Authentication required"
@@ -37,6 +38,7 @@ func (h *GoogleCalendarHandler) GetCalendarEvents(w http.ResponseWriter, r *http
 	// Parse query parameters
 	startTimestampStr := r.URL.Query().Get("start_timestamp")
 	endTimestampStr := r.URL.Query().Get("end_timestamp")
+	forceSync := r.URL.Query().Get("force_sync") == "true"
 
 	// Validate query parameters
 	if startTimestampStr == "" || endTimestampStr == "" {
@@ -72,10 +74,11 @@ func (h *GoogleCalendarHandler) GetCalendarEvents(w http.ResponseWriter, r *http
 	h.logger.Info("Fetching calendar events for user",
 		zap.Uint64("user_id", user.ID),
 		zap.Time("start_time", startTime),
-		zap.Time("end_time", endTime))
+		zap.Time("end_time", endTime),
+		zap.Bool("force_sync", forceSync))
 
-	// Get calendar events from service
-	calendarsWithEvents, err := h.calendarService.GetUserCalendarEvents(user.ID, startTime, endTime)
+	// Get calendar events from service with smart sync
+	calendarsWithEvents, err := h.calendarService.GetUserCalendarEventsWithSync(user.ID, startTime, endTime, forceSync)
 	if err != nil {
 		h.logger.Error("Failed to get calendar events", zap.Error(err), zap.Uint64("user_id", user.ID))
 
