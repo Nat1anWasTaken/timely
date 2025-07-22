@@ -36,7 +36,7 @@
     <div class="fixed inset-0 z-50 md:hidden">
         <!-- Backdrop -->
         <div class="fixed inset-0 bg-black/50" onclick={() => isOpen = false}></div>
-        
+
         <!-- Sidebar -->
         <div class="fixed left-0 top-0 h-full w-64 bg-card border-r">
             <div class="flex items-center justify-between p-6">

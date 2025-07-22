@@ -2,7 +2,6 @@
     import { Card } from "$lib/components/ui/card/index.js";
     import { cn } from "$lib/utils.ts";
     import type { Snippet } from "svelte";
-
     interface Props {
         children?: Snippet;
         specialDay?: boolean;
