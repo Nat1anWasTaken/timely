@@ -49,6 +49,7 @@
         ]
     },
     "dependencies": {
+        "calendar-js": "^1.4.4",
         "mode-watcher": "^1.1.0"
     }
 }
