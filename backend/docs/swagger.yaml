@@ -79,8 +79,6 @@ definitions:
         $ref: '#/definitions/model.CalendarSource'
       source_id:
         type: string
-      status:
-        $ref: '#/definitions/model.CalendarStatus'
       summary:
         type: string
       synced_at:
@@ -92,6 +90,8 @@ definitions:
       user_id:
         example: "0"
         type: string
+      visibility:
+        $ref: '#/definitions/model.CalendarVisibility'
     type: object
   model.CalendarListResponse:
     description: Calendar list response
@@ -115,14 +115,14 @@ definitions:
     x-enum-varnames:
     - SourceGoogle
     - SourceISC
-  model.CalendarStatus:
+  model.CalendarVisibility:
     enum:
     - public
     - private
     type: string
     x-enum-varnames:
-    - CalendarStatusPublic
-    - CalendarStatusPrivate
+    - CalendarVisibilityPublic
+    - CalendarVisibilityPrivate
   model.ErrorResponse:
     description: Error response structure
     properties:

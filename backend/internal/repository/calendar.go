@@ -69,3 +69,52 @@ func (r *CalendarRepository) ExistsByUserIDAndSourceID(userID uint64, sourceID s
 		Count(&count).Error
 	return count > 0, err
 }
+
+// CalendarEvent repository methods
+
+// CreateEvent creates a new calendar event
+func (r *CalendarRepository) CreateEvent(event *model.CalendarEvent) error {
+	return r.db.Create(event).Error
+}
+
+// CreateEvents creates multiple calendar events in a batch
+func (r *CalendarRepository) CreateEvents(events []*model.CalendarEvent) error {
+	if len(events) == 0 {
+		return nil
+	}
+	return r.db.CreateInBatches(events, 100).Error
+}
+
+// FindEventsByCalendarID finds all events for a specific calendar
+func (r *CalendarRepository) FindEventsByCalendarID(calendarID uint64) ([]*model.CalendarEvent, error) {
+	var events []*model.CalendarEvent
+	err := r.db.Where("calendar_id = ?", calendarID).Find(&events).Error
+	if err != nil {
+		return nil, err
+	}
+	return events, nil
+}
+
+// FindEventsByUserID finds all events for a user across all their calendars
+func (r *CalendarRepository) FindEventsByUserID(userID uint64) ([]*model.CalendarEvent, error) {
+	var events []*model.CalendarEvent
+	err := r.db.Joins("JOIN calendars ON calendar_events.calendar_id = calendars.id").
+		Where("calendars.user_id = ?", userID).
+		Find(&events).Error
+	if err != nil {
+		return nil, err
+	}
+	return events, nil
+}
+
+// DeleteEventsByCalendarID deletes all events for a specific calendar
+func (r *CalendarRepository) DeleteEventsByCalendarID(calendarID uint64) error {
+	return r.db.Where("calendar_id = ?", calendarID).Delete(&model.CalendarEvent{}).Error
+}
+
+// ExistsEventBySourceID checks if an event exists by its source ID
+func (r *CalendarRepository) ExistsEventBySourceID(sourceID string) (bool, error) {
+	var count int64
+	err := r.db.Model(&model.CalendarEvent{}).Where("source_id = ?", sourceID).Count(&count).Error
+	return count > 0, err
+}

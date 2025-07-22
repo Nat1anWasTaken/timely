@@ -427,9 +427,6 @@ const docTemplate = `{
                 "source_id": {
                     "type": "string"
                 },
-                "status": {
-                    "$ref": "#/definitions/model.CalendarStatus"
-                },
                 "summary": {
                     "type": "string"
                 },
@@ -445,6 +442,9 @@ const docTemplate = `{
                 "user_id": {
                     "type": "string",
                     "example": "0"
+                },
+                "visibility": {
+                    "$ref": "#/definitions/model.CalendarVisibility"
                 }
             }
         },
@@ -479,15 +479,15 @@ const docTemplate = `{
                 "SourceISC"
             ]
         },
-        "model.CalendarStatus": {
+        "model.CalendarVisibility": {
             "type": "string",
             "enum": [
                 "public",
                 "private"
             ],
             "x-enum-varnames": [
-                "CalendarStatusPublic",
-                "CalendarStatusPrivate"
+                "CalendarVisibilityPublic",
+                "CalendarVisibilityPrivate"
             ]
         },
         "model.ErrorResponse": {

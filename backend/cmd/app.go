@@ -110,8 +110,9 @@ func DatabaseInit() {
 	// Auto-migrate the schema
 	if err := dbConfig.GetDB().AutoMigrate(
 		&model.User{},
-		&model.Calendar{},
 		&model.Account{},
+		&model.Calendar{},
+		&model.CalendarEvent{},
 	); err != nil {
 		log.Fatal("Failed to migrate database: " + err.Error())
 	}
