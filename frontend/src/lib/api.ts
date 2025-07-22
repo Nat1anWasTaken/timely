@@ -91,7 +91,7 @@ class ApiClient {
                 );
             }
 
-            return data;
+            return data as T;
         } catch (error) {
             if (error instanceof ApiError) {
                 throw error;
@@ -143,7 +143,11 @@ class ApiClient {
 
     // Calendar Methods
     async getCalendarEvents(params: GetCalendarEventsParams): Promise<CalendarEventsResponse> {
-        return this.get<CalendarEventsResponse>("/api/calendar/events", params);
+        const queryParams: Record<string, string> = {
+            start_timestamp: params.start_timestamp,
+            end_timestamp: params.end_timestamp
+        };
+        return this.get<CalendarEventsResponse>("/api/calendar/events", queryParams);
     }
 
     async getGoogleCalendars(): Promise<CalendarListResponse> {
