@@ -197,16 +197,13 @@ const docTemplate = `{
             }
         },
         "/api/calendar/events": {
-            "post": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
                 "description": "Retrieves all events for user's calendars within a specified time range (max 3 months)",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -216,13 +213,18 @@ const docTemplate = `{
                 "summary": "Get Calendar Events",
                 "parameters": [
                     {
-                        "description": "Time range request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.CalendarEventsRequest"
-                        }
+                        "type": "string",
+                        "description": "Start timestamp in Unix format",
+                        "name": "start_timestamp",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "End timestamp in Unix format",
+                        "name": "end_timestamp",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -233,7 +235,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request - Invalid request body or time range",
+                        "description": "Bad Request - Invalid query parameters or time range",
                         "schema": {
                             "$ref": "#/definitions/model.ErrorResponse"
                         }
@@ -579,24 +581,6 @@ const docTemplate = `{
                 "CalendarEventVisibilityPrivate",
                 "CalendarEventVisibilityInherited"
             ]
-        },
-        "model.CalendarEventsRequest": {
-            "description": "Calendar events request with time range",
-            "type": "object",
-            "required": [
-                "end_time",
-                "start_time"
-            ],
-            "properties": {
-                "end_time": {
-                    "type": "string",
-                    "example": "2024-01-31T23:59:59Z"
-                },
-                "start_time": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
-                }
-            }
         },
         "model.CalendarEventsResponse": {
             "description": "Calendar events response",

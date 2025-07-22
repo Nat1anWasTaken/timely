@@ -147,19 +147,6 @@ definitions:
     - CalendarEventVisibilityPublic
     - CalendarEventVisibilityPrivate
     - CalendarEventVisibilityInherited
-  model.CalendarEventsRequest:
-    description: Calendar events request with time range
-    properties:
-      end_time:
-        example: "2024-01-31T23:59:59Z"
-        type: string
-      start_time:
-        example: "2024-01-01T00:00:00Z"
-        type: string
-    required:
-    - end_time
-    - start_time
-    type: object
   model.CalendarEventsResponse:
     description: Calendar events response
     properties:
@@ -531,18 +518,20 @@ paths:
       tags:
       - Authentication
   /api/calendar/events:
-    post:
-      consumes:
-      - application/json
+    get:
       description: Retrieves all events for user's calendars within a specified time
         range (max 3 months)
       parameters:
-      - description: Time range request
-        in: body
-        name: request
+      - description: Start timestamp in Unix format
+        in: query
+        name: start_timestamp
         required: true
-        schema:
-          $ref: '#/definitions/model.CalendarEventsRequest'
+        type: string
+      - description: End timestamp in Unix format
+        in: query
+        name: end_timestamp
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -551,7 +540,7 @@ paths:
           schema:
             $ref: '#/definitions/model.CalendarEventsResponse'
         "400":
-          description: Bad Request - Invalid request body or time range
+          description: Bad Request - Invalid query parameters or time range
           schema:
             $ref: '#/definitions/model.ErrorResponse'
         "401":
