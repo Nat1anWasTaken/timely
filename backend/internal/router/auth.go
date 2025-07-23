@@ -30,6 +30,7 @@ func AuthRouter(r chi.Router) {
 	// Initialize traditional auth handlers
 	loginHandler := auth.NewLoginHandler(userService)
 	registerHandler := auth.NewRegisterHandler(userService)
+	logoutHandler := auth.NewLogoutHandler()
 
 	// Public Routes
 	r.Route("/auth", func(r chi.Router) {
@@ -39,6 +40,7 @@ func AuthRouter(r chi.Router) {
 		// Traditional auth endpoints
 		r.Post("/login", loginHandler.Login)
 		r.Post("/register", registerHandler.Register) // Handle registration
+		r.Post("/logout", logoutHandler.Logout)
 
 		// Google OAuth endpoints
 		r.Get("/google/login", googleHandler.GoogleLogin)

@@ -105,6 +105,45 @@ func ValidateJWT(tokenString string) (*Claims, error) {
 	return claims, nil
 }
 
+// ClearJWTCookie creates an expired HTTP cookie to clear the JWT token
+func ClearJWTCookie() *http.Cookie {
+	clientDomain := os.Getenv("FRONTEND_DOMAIN")
+
+	// Extract domain from FRONTEND_DOMAIN URL (e.g., "http://localhost:3000" -> "localhost")
+	var domain string
+	if clientDomain != "" {
+		// Remove protocol
+		if strings.HasPrefix(clientDomain, "http://") {
+			clientDomain = clientDomain[7:]
+		} else if strings.HasPrefix(clientDomain, "https://") {
+			clientDomain = clientDomain[8:]
+		}
+
+		// Extract domain part (remove port if present)
+		parts := strings.Split(clientDomain, ":")
+		domain = parts[0]
+
+		// Don't set domain for localhost (browser requirement)
+		if domain == "localhost" || domain == "127.0.0.1" {
+			domain = ""
+		}
+	}
+
+	// Determine if we should use Secure flag (true for HTTPS)
+	secure := strings.HasPrefix(os.Getenv("FRONTEND_DOMAIN"), "https://")
+
+	return &http.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Now().Add(-time.Hour), // Expire 1 hour ago
+		Path:     "/",
+		Domain:   domain,
+	}
+}
+
 // ExtractTokenFromHeader extracts JWT token from Authorization header
 func ExtractTokenFromHeader(authHeader string) string {
 	if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
