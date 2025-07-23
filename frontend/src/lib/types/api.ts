@@ -42,6 +42,7 @@ export interface User {
     id: string;
     username: string;
     display_name: string;
+    email?: string;
     picture?: string;
     created_at: string;
     updated_at: string;
@@ -145,6 +146,18 @@ export interface ImportCalendarResponse {
     success: boolean;
     message: string;
     calendar: Calendar;
+}
+
+export interface ImportICSRequest {
+    ics_data: string;
+    calendar_name?: string;
+}
+
+export interface ImportICSResponse {
+    success: boolean;
+    message: string;
+    calendar: Calendar;
+    events_count?: number;
 }
 
 // API Query Parameters

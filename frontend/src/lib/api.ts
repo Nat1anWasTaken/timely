@@ -8,6 +8,8 @@ import type {
     GoogleOAuthLoginParams,
     ImportCalendarRequest,
     ImportCalendarResponse,
+    ImportICSRequest,
+    ImportICSResponse,
     LoginRequest,
     RegisterRequest,
     UserProfileResponse
@@ -133,8 +135,10 @@ class ApiClient {
         return response;
     }
 
-    logout(): void {
+    async logout(): Promise<AuthResponse> {
+        const response = await this.post<AuthResponse>("/api/auth/logout");
         this.setToken(null);
+        return response;
     }
 
     // OAuth Methods
@@ -170,6 +174,27 @@ class ApiClient {
 
     async importGoogleCalendar(request: ImportCalendarRequest): Promise<ImportCalendarResponse> {
         return this.post<ImportCalendarResponse>("/api/calendar/google", request);
+    }
+
+    async importICSFile(request: ImportICSRequest): Promise<ImportICSResponse> {
+        return this.post<ImportICSResponse>("/api/calendar/ics", request);
+    }
+
+    async importICSFileUpload(file: File, calendarName?: string): Promise<ImportICSResponse> {
+        const formData = new FormData();
+        formData.append("ics_file", file);
+        if (calendarName) {
+            formData.append("calendar_name", calendarName);
+        }
+
+        return this.request<ImportICSResponse>("/api/calendar/ics", {
+            method: "POST",
+            body: formData,
+            headers: {
+                // Don't set Content-Type for FormData - let browser set it with boundary
+                ...(this.token && { Authorization: `Bearer ${this.token}` })
+            }
+        });
     }
 
     // User Methods
