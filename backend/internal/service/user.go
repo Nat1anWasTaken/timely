@@ -137,6 +137,22 @@ func (s *UserService) GetUserByID(id uint64) (*model.User, error) {
 	return s.userRepo.FindByID(id)
 }
 
+// GetUserWithAccountsByID retrieves a user by ID with associated accounts
+func (s *UserService) GetUserWithAccountsByID(id uint64) (*model.User, error) {
+	user, err := s.userRepo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	accounts, err := s.userRepo.FindAccountsByUserID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	user.Accounts = accounts
+	return user, nil
+}
+
 // CreateUser creates a new user with email/password authentication
 func (s *UserService) CreateUser(req *model.RegisterRequest) (*model.User, error) {
 	// Check if user already exists

@@ -150,6 +150,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/auth/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Clear user session by removing JWT cookie",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "User Logout",
+                "responses": {
+                    "200": {
+                        "description": "Logout successful",
+                        "schema": {
+                            "$ref": "#/definitions/model.AuthResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/register": {
             "post": {
                 "description": "Register a new user account with email, username, display name, and password",
@@ -389,7 +423,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Imports an ICS file via JSON body or file upload, creates a new calendar, and imports all events",
+                "description": "Imports an ICS file via JSON body or file upload. Calendar name is extracted from ICS properties (X-WR-CALNAME) or falls back to \"Untitled Calendar\"",
                 "consumes": [
                     "application/json",
                     "multipart/form-data"
@@ -403,7 +437,7 @@ const docTemplate = `{
                 "summary": "Import ICS File",
                 "parameters": [
                     {
-                        "description": "Import ICS request (JSON)",
+                        "description": "Import ICS request (JSON) - calendar_name is optional",
                         "name": "request",
                         "in": "body",
                         "schema": {
@@ -412,15 +446,16 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Calendar name (for file upload)",
+                        "description": "Calendar name override (optional - will use ICS properties if not provided)",
                         "name": "calendar_name",
                         "in": "formData"
                     },
                     {
                         "type": "file",
-                        "description": "ICS file to upload",
+                        "description": "ICS file to upload (required for file upload)",
                         "name": "ics_file",
-                        "in": "formData"
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -527,7 +562,6 @@ const docTemplate = `{
         "calendar.ImportICSRequest": {
             "type": "object",
             "required": [
-                "calendar_name",
                 "ics_data"
             ],
             "properties": {

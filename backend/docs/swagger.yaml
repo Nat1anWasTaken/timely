@@ -22,7 +22,6 @@ definitions:
       ics_data:
         type: string
     required:
-    - calendar_name
     - ics_data
     type: object
   calendar.ImportICSResponse:
@@ -518,6 +517,27 @@ paths:
       summary: User Login
       tags:
       - Authentication
+  /api/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Clear user session by removing JWT cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logout successful
+          schema:
+            $ref: '#/definitions/model.AuthResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: User Logout
+      tags:
+      - Authentication
   /api/auth/register:
     post:
       consumes:
@@ -675,21 +695,24 @@ paths:
       consumes:
       - application/json
       - multipart/form-data
-      description: Imports an ICS file via JSON body or file upload, creates a new
-        calendar, and imports all events
+      description: Imports an ICS file via JSON body or file upload. Calendar name
+        is extracted from ICS properties (X-WR-CALNAME) or falls back to "Untitled
+        Calendar"
       parameters:
-      - description: Import ICS request (JSON)
+      - description: Import ICS request (JSON) - calendar_name is optional
         in: body
         name: request
         schema:
           $ref: '#/definitions/calendar.ImportICSRequest'
-      - description: Calendar name (for file upload)
+      - description: Calendar name override (optional - will use ICS properties if
+          not provided)
         in: formData
         name: calendar_name
         type: string
-      - description: ICS file to upload
+      - description: ICS file to upload (required for file upload)
         in: formData
         name: ics_file
+        required: true
         type: file
       produces:
       - application/json

@@ -46,8 +46,8 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 
 	h.logger.Info("Fetching user profile", zap.Uint64("user_id", user.ID))
 
-	// Get full user data from service
-	fullUser, err := h.userService.GetUserByID(user.ID)
+	// Get full user data with accounts from service
+	fullUser, err := h.userService.GetUserWithAccountsByID(user.ID)
 	if err != nil {
 		h.logger.Error("Failed to get user profile", zap.Error(err), zap.Uint64("user_id", user.ID))
 		sendErrorResponse(w, "User not found", "user_not_found", http.StatusNotFound)
