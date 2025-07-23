@@ -775,6 +775,9 @@ func (s *CalendarService) GetUserCalendarEventsWithSync(userID uint64, startTime
 			calendarEvents = []*model.CalendarEvent{}
 		}
 
+		// Apply calendar event nickname to event titles
+		s.applyEventNickname(calendarEvents, calendar)
+
 		calendarWithEvents := &model.CalendarWithEvents{
 			Calendar: calendar,
 			Events:   calendarEvents,
@@ -1193,4 +1196,133 @@ func (s *CalendarService) DeleteCalendar(userID uint64, calendarID string) error
 		zap.String("summary", calendar.Summary))
 
 	return nil
+}
+
+// GetPublicUserCalendarEvents retrieves public calendar events for a user within a specified time range
+func (s *CalendarService) GetPublicUserCalendarEvents(userID uint64, startTime, endTime time.Time) ([]*model.CalendarWithEvents, error) {
+	// Validate time range (max 3 months)
+	threeMonths := startTime.AddDate(0, 3, 0)
+	if endTime.After(threeMonths) {
+		return nil, fmt.Errorf("time range cannot exceed 3 months")
+	}
+
+	// Get all user's calendars
+	calendars, err := s.calendarRepo.FindByUserID(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user calendars: %w", err)
+	}
+
+	if len(calendars) == 0 {
+		return []*model.CalendarWithEvents{}, nil
+	}
+
+	// Check if user exists (if no calendars found, user might not exist)
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		s.logger.Error("User not found", zap.Uint64("user_id", userID), zap.Error(err))
+		return nil, fmt.Errorf("user not found")
+	}
+	if user == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	// Extract calendar IDs
+	var calendarIDs []uint64
+	for _, calendar := range calendars {
+		calendarIDs = append(calendarIDs, calendar.ID)
+	}
+
+	// Get events for all calendars within time range
+	events, err := s.calendarRepo.FindEventsByCalendarIDsAndTimeRange(calendarIDs, startTime, endTime)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get calendar events: %w", err)
+	}
+
+	// Group events by calendar ID and filter for public visibility
+	eventsByCalendar := make(map[uint64][]*model.CalendarEvent)
+	calendarMap := make(map[uint64]*model.Calendar)
+	
+	// Create calendar lookup map
+	for _, calendar := range calendars {
+		calendarMap[calendar.ID] = calendar
+	}
+
+	// Filter events for public visibility
+	for _, event := range events {
+		calendar := calendarMap[event.CalendarID]
+		if calendar == nil {
+			continue
+		}
+
+		// Check if event is public based on visibility rules
+		isPublic := false
+		switch event.Visibility {
+		case model.CalendarEventVisibilityPublic:
+			// Event is explicitly public
+			isPublic = true
+		case model.CalendarEventVisibilityInherited:
+			// Event inherits calendar visibility
+			isPublic = calendar.Visibility == model.CalendarVisibilityPublic
+		case model.CalendarEventVisibilityPrivate:
+			// Event is explicitly private
+			isPublic = false
+		}
+
+		if isPublic {
+			eventsByCalendar[event.CalendarID] = append(eventsByCalendar[event.CalendarID], event)
+		}
+	}
+
+	// Create nested response structure with only calendars that have public events
+	var calendarsWithEvents []*model.CalendarWithEvents
+	for _, calendar := range calendars {
+		calendarEvents := eventsByCalendar[calendar.ID]
+		
+		// Only include calendars that have public events or are explicitly public
+		if len(calendarEvents) > 0 || calendar.Visibility == model.CalendarVisibilityPublic {
+			if calendarEvents == nil {
+				calendarEvents = []*model.CalendarEvent{}
+			}
+
+			// Apply calendar event nickname to event titles
+			s.applyEventNickname(calendarEvents, calendar)
+
+			calendarWithEvents := &model.CalendarWithEvents{
+				Calendar: calendar,
+				Events:   calendarEvents,
+			}
+			calendarsWithEvents = append(calendarsWithEvents, calendarWithEvents)
+		}
+	}
+
+	// Count total public events
+	totalPublicEvents := 0
+	for _, calendarWithEvents := range calendarsWithEvents {
+		totalPublicEvents += len(calendarWithEvents.Events)
+	}
+
+	s.logger.Info("Successfully retrieved public calendar events",
+		zap.Uint64("user_id", userID),
+		zap.Int("calendar_count", len(calendarsWithEvents)),
+		zap.Int("total_public_events", totalPublicEvents),
+		zap.Time("start_time", startTime),
+		zap.Time("end_time", endTime))
+
+	return calendarsWithEvents, nil
+}
+
+// applyEventNickname applies the calendar's event nickname to event titles if nickname is set
+func (s *CalendarService) applyEventNickname(events []*model.CalendarEvent, calendar *model.Calendar) {
+	// Only apply nickname if it's set and not empty
+	if calendar.EventNickname == nil || *calendar.EventNickname == "" {
+		return
+	}
+
+	// Apply nickname as prefix to each event title
+	nickname := *calendar.EventNickname
+	for _, event := range events {
+		if event.Title != "" {
+			event.Title = fmt.Sprintf("[%s] %s", nickname, event.Title)
+		}
+	}
 }

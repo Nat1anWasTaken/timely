@@ -15,19 +15,28 @@ func UserRouter(r chi.Router) {
 	// Initialize database dependencies
 	dbConfig := config.NewDatabaseConfig()
 	userRepo := repository.NewUserRepository(dbConfig.GetDB())
+	calendarRepo := repository.NewCalendarRepository(dbConfig.GetDB())
+
+	// Initialize OAuth dependencies
+	oauthConfig := config.NewOAuthConfig()
 
 	// Initialize services
 	userService := service.NewUserService(userRepo)
+	calendarService := service.NewCalendarService(userRepo, calendarRepo, oauthConfig)
 
 	// Initialize handlers
 	userHandler := user.NewUserHandler(userService)
+	userEventsHandler := user.NewUserEventsHandler(calendarService)
 
-	// User routes with JWT middleware
+	// User routes
 	r.Route("/users", func(r chi.Router) {
-		// Apply JWT middleware to all user routes
-		r.Use(middleware.JWTMiddleware(zap.L()))
+		// Authenticated user profile endpoint (requires JWT)
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.JWTMiddleware(zap.L()))
+			r.Get("/me", userHandler.GetProfile)
+		})
 
-		// RESTful user profile endpoint
-		r.Get("/profile", userHandler.GetProfile)
+		// Public user events endpoint (no authentication required)
+		r.Get("/{user_id}/events", userEventsHandler.GetPublicUserEvents)
 	})
 }

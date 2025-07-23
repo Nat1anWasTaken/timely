@@ -900,7 +900,49 @@ paths:
       summary: Import ICS File
       tags:
       - Calendar
-  /api/users/profile:
+  /api/users/{user_id}/events:
+    get:
+      description: Retrieves public calendar events for a specific user within a specified
+        time range (max 3 months). No authentication required.
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Start timestamp in Unix format
+        in: query
+        name: start_timestamp
+        required: true
+        type: string
+      - description: End timestamp in Unix format
+        in: query
+        name: end_timestamp
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Public events retrieved successfully
+          schema:
+            $ref: '#/definitions/model.CalendarEventsResponse'
+        "400":
+          description: Bad Request - Invalid parameters or time range
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Get Public User Events
+      tags:
+      - User
+  /api/users/me:
     get:
       consumes:
       - application/json
