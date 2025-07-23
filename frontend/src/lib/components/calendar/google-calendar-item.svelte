@@ -24,26 +24,22 @@
         : 'cursor-pointer hover:bg-accent/50'} {isSelected ? 'ring-2 ring-primary' : ''}"
     onclick={() => !isImported && onSelect(calendar)}
 >
-    <CardContent class="p-4">
-        <div class="flex items-start space-x-3">
+    <CardContent class="px-3 py-2">
+        <div class="flex items-center space-x-2.5">
             <div
-                class="mt-0.5 h-4 w-4 rounded-full"
+                class="h-2.5 w-2.5 rounded-full flex-shrink-0"
                 style="background-color: {calendar.backgroundColor || '#3B82F6'}"
             ></div>
             <div class="min-w-0 flex-1">
-                <CardTitle class="truncate text-sm">{calendar.summary}</CardTitle>
-                {#if calendar.description}
-                    <CardDescription class="mt-1 line-clamp-2 text-xs">
-                        {calendar.description}
-                    </CardDescription>
-                {/if}
-                <div class="mt-2 flex items-center text-xs text-muted-foreground">
+                <CardTitle class="truncate text-sm leading-none">{calendar.summary}</CardTitle>
+                <div class="mt-0.5 flex items-center text-xs text-muted-foreground leading-none">
                     <span>{calendar.timeZone}</span>
-                    <span class="mx-1">•</span>
                     {#if calendar.primary}
+                        <span class="mx-1">•</span>
                         <span class="text-primary">Primary</span>
                     {/if}
                     {#if isImported}
+                        <span class="mx-1">•</span>
                         <span>Imported</span>
                     {/if}
                 </div>

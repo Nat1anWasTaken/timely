@@ -10,7 +10,12 @@
     let { children, specialDay = false }: Props = $props();
 </script>
 
-<Card class={cn("h-12 items-center justify-center", specialDay ? "bg-red-500" : "")}>
+<Card
+    class={cn(
+        "h-12 items-center justify-center",
+        specialDay ? "bg-primary text-primary-foreground" : ""
+    )}
+>
     {#if children}
         {@render children()}
     {/if}

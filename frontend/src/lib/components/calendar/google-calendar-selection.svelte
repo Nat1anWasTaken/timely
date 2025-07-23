@@ -3,7 +3,7 @@
     import { Label } from "$lib/components/ui/label/index.js";
     import { api } from "$lib/api.js";
     import type { GoogleCalendar } from "$lib/types/api.js";
-    import { createQuery } from "@tanstack/svelte-query";
+    import { createQuery, useQueryClient } from "@tanstack/svelte-query";
     import GoogleCalendarItem from "./google-calendar-item.svelte";
     import { toast } from "svelte-sonner";
 
@@ -17,6 +17,8 @@
     let selectedCalendar: GoogleCalendar | null = $state(null);
     let selectedColor = $state("#3B82F6");
     let loading = $state(false);
+
+    const queryClient = useQueryClient();
 
     const googleCalendarsQuery = createQuery({
         queryKey: ["google-calendars"],
@@ -62,6 +64,8 @@
 
             if (response.success) {
                 toast.success("Google calendar imported successfully!");
+                // Invalidate queries to refresh the data
+                queryClient.invalidateQueries({ queryKey: ["imported-calendars"] });
                 onSuccess();
             } else {
                 toast.error(response.message || "Failed to import Google calendar");
@@ -74,7 +78,7 @@
     }
 </script>
 
-<div class="space-y-4 overflow-y-scroll">
+<div class="space-y-4">
     <div class="mx-4 flex items-center space-x-4">
         <Button variant="ghost" size="sm" onclick={onBack}>← Back</Button>
     </div>
@@ -84,23 +88,27 @@
             <div class="text-sm text-muted-foreground">Loading calendars...</div>
         </div>
     {:else if $googleCalendarsQuery.error}
-        <div class="text-sm text-destructive">
+        <div class="text-sm text-destructive p-4">
             Failed to load Google calendars: {$googleCalendarsQuery.error.message}
         </div>
     {:else if $googleCalendarsQuery.data?.calendars}
         <div class="space-y-3 p-4">
             <Label class="text-sm font-medium">Select a Google calendar</Label>
-            {#each $googleCalendarsQuery.data.calendars as calendar}
-                <GoogleCalendarItem
-                    {calendar}
-                    isSelected={selectedCalendar?.id === calendar.id}
-                    isImported={importedGoogleCalendarIds.includes(calendar.id)}
-                    onSelect={selectCalendar}
-                />
-            {/each}
+            
+            <!-- Scrollable calendar list -->
+            <div class="max-h-60 overflow-y-auto space-y-3 p-0.5">
+                {#each $googleCalendarsQuery.data.calendars as calendar}
+                    <GoogleCalendarItem
+                        {calendar}
+                        isSelected={selectedCalendar?.id === calendar.id}
+                        isImported={importedGoogleCalendarIds.includes(calendar.id)}
+                        onSelect={selectCalendar}
+                    />
+                {/each}
+            </div>
 
             {#if selectedCalendar}
-                <div class="space-y-4">
+                <div class="space-y-4 pt-4 border-t">
                     <div class="space-y-2">
                         <Label for="color-picker" class="text-sm font-medium">Calendar color</Label>
                         <div class="flex items-center space-x-2">

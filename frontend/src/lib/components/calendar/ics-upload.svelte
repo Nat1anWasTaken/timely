@@ -5,6 +5,7 @@
     import { FileText, CheckCircle2 } from "@lucide/svelte";
     import { api } from "$lib/api.js";
     import { toast } from "svelte-sonner";
+    import { useQueryClient } from "@tanstack/svelte-query";
 
     interface Props {
         onBack: () => void;
@@ -12,6 +13,8 @@
     }
 
     let { onBack, onSuccess }: Props = $props();
+
+    const queryClient = useQueryClient();
 
     // Internal state
     let icsFile: File | null = $state(null);
@@ -55,6 +58,8 @@
                 toast.success(
                     `ICS calendar imported successfully! ${response.events_count || 0} events added.`
                 );
+                // Invalidate queries to refresh the data
+                queryClient.invalidateQueries({ queryKey: ["imported-calendars"] });
                 onSuccess();
             } else {
                 toast.error(response.message || "Failed to import ICS file");

@@ -12,7 +12,7 @@
 
 <Card class="h-32 gap-0 p-4">
     <p class="text-sm text-muted-foreground">{day}</p>
-    <div class="flex h-full flex-col items-center justify-start">
+    <div class="flex h-full flex-col items-start justify-start">
         {#if children}
             {@render children()}
         {/if}

@@ -1,14 +1,14 @@
 <script lang="ts">
-    import { Button } from "$lib/components/ui/button/index.js";
+    import { Button } from "$lib/components/ui/button";
     import {
-        Sheet,
-        SheetContent,
-        SheetDescription,
-        SheetHeader,
-        SheetTitle,
-        SheetTrigger
-    } from "$lib/components/ui/sheet/index.js";
-    import type { User } from "$lib/types/api.js";
+        Dialog,
+        DialogContent,
+        DialogDescription,
+        DialogHeader,
+        DialogTitle,
+        DialogTrigger
+    } from "$lib/components/ui/dialog";
+    import type { User } from "$lib/types/api";
     import CalendarProviderSelection from "./calendar-provider-selection.svelte";
     import GoogleCalendarSelection from "./google-calendar-selection.svelte";
     import IcsUpload from "./ics-upload.svelte";
@@ -37,17 +37,17 @@
     }
 </script>
 
-<Sheet bind:open onOpenChange={() => resetState()}>
-    <SheetTrigger>
+<Dialog bind:open onOpenChange={() => resetState()}>
+    <DialogTrigger>
         {@render children()}
-    </SheetTrigger>
-    <SheetContent class="sm:max-w-md">
-        <SheetHeader>
-            <SheetTitle>Add Calendar</SheetTitle>
-            <SheetDescription>
-                Connect a Google calendar or upload an ICS file to add events to your dashboard.
-            </SheetDescription>
-        </SheetHeader>
+    </DialogTrigger>
+    <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+            <DialogTitle>Import Calendar</DialogTitle>
+            <DialogDescription>
+                Connect a Google calendar or upload an ICS file to add events to your profile.
+            </DialogDescription>
+        </DialogHeader>
 
         <div class="space-y-4 py-4">
             {#if !selectedProvider}
@@ -61,5 +61,5 @@
                 <IcsUpload onBack={() => (selectedProvider = null)} onSuccess={handleSuccess} />
             {/if}
         </div>
-    </SheetContent>
-</Sheet>
+    </DialogContent>
+</Dialog>
