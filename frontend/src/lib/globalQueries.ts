@@ -3,7 +3,7 @@ import { api } from "./api";
 
 export function createUserDataQuery() {
     return createQuery({
-        queryKey: ["userData"],
+        queryKey: ["user-profile"],
         queryFn: () => api.getUserProfile(),
         staleTime: 1000 * 60 * 5,
         refetchOnMount: true,
