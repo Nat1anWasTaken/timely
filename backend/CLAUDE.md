@@ -62,6 +62,7 @@ go mod download                 # Download dependencies
 - **Logging:** `go.uber.org/zap` with log rotation
 - **Documentation:** `github.com/swaggo/swag` for Swagger generation
 - **IDs:** `github.com/bwmarrin/snowflake` for distributed unique IDs
+- **ICS Processing:** `github.com/arran4/golang-ical` for ICS/iCal file parsing
 
 ## API Endpoints
 
@@ -74,6 +75,8 @@ go mod download                 # Download dependencies
 ### Calendar (`/api/calendar`) - JWT Protected
 - `GET /api/calendar/google/` - Get Google calendars
 - `POST /api/calendar/google/` - Import Google calendar
+- `POST /api/calendar/ics/import` - Import ICS file via JSON body
+- `POST /api/calendar/ics/upload` - Import ICS file via multipart form upload
 - `GET /api/calendar/events` - Get calendar events with time range filtering
 
 ### System

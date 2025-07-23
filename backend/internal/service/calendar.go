@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	ics "github.com/arran4/golang-ical"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 
@@ -910,4 +911,164 @@ func (s *CalendarService) SyncCalendarEvents(userID uint64, calendarID string) e
 		zap.Int("updated_events", len(eventsToUpdate)))
 
 	return nil
+}
+
+// ImportICSCalendar creates a calendar from ICS data and imports all events
+func (s *CalendarService) ImportICSCalendar(userID uint64, calendarName string, icsCalendar *ics.Calendar, icsEvents []*ics.VEvent) (*model.Calendar, int, error) {
+	s.logger.Info("Importing ICS calendar", 
+		zap.Uint64("user_id", userID),
+		zap.String("calendar_name", calendarName),
+		zap.Int("events_count", len(icsEvents)))
+
+	// Create the calendar
+	calendar := &model.Calendar{
+		ID:       utils.GenerateID(),
+		UserID:   userID,
+		Source:   model.SourceISC,
+		Summary:  calendarName,
+		TimeZone: "UTC", // Default timezone, could be extracted from ICS if available
+		Visibility: model.CalendarVisibilityPrivate,
+		SyncedAt: time.Now(),
+	}
+
+	// Save calendar to database
+	if err := s.calendarRepo.Create(calendar); err != nil {
+		return nil, 0, fmt.Errorf("failed to create calendar: %w", err)
+	}
+
+	// Convert and import events
+	var calendarEvents []*model.CalendarEvent
+	successCount := 0
+
+	for _, icsEvent := range icsEvents {
+		event, err := s.convertICSEventToCalendarEvent(icsEvent, calendar.ID)
+		if err != nil {
+			s.logger.Error("Failed to convert ICS event", 
+				zap.Error(err),
+				zap.String("event_id", icsEvent.Id()))
+			continue
+		}
+
+		calendarEvents = append(calendarEvents, event)
+		successCount++
+	}
+
+	// Batch create events
+	if len(calendarEvents) > 0 {
+		if err := s.calendarRepo.CreateEvents(calendarEvents); err != nil {
+			s.logger.Error("Failed to create events", zap.Error(err))
+			return nil, 0, fmt.Errorf("failed to create events: %w", err)
+		}
+	}
+
+	s.logger.Info("Successfully imported ICS calendar",
+		zap.Uint64("user_id", userID),
+		zap.String("calendar_name", calendarName),
+		zap.Uint64("calendar_id", calendar.ID),
+		zap.Int("imported_events", successCount))
+
+	return calendar, successCount, nil
+}
+
+// convertICSEventToCalendarEvent converts an ICS event to our internal CalendarEvent format
+func (s *CalendarService) convertICSEventToCalendarEvent(icsEvent *ics.VEvent, calendarID uint64) (*model.CalendarEvent, error) {
+	// Extract basic event information
+	summary := icsEvent.GetProperty(ics.ComponentPropertySummary)
+	if summary == nil {
+		return nil, fmt.Errorf("event missing summary")
+	}
+
+	// Extract start time
+	dtStart := icsEvent.GetProperty(ics.ComponentPropertyDtStart)
+	if dtStart == nil {
+		return nil, fmt.Errorf("event missing start time")
+	}
+
+	// Extract end time
+	dtEnd := icsEvent.GetProperty(ics.ComponentPropertyDtEnd)
+	if dtEnd == nil {
+		return nil, fmt.Errorf("event missing end time")
+	}
+
+	// Parse start time
+	startTime, err := s.parseICSDateTime(dtStart.Value, dtStart.ICalParameters)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse start time: %w", err)
+	}
+
+	// Parse end time
+	endTime, err := s.parseICSDateTime(dtEnd.Value, dtEnd.ICalParameters)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse end time: %w", err)
+	}
+
+	// Determine if it's an all-day event
+	allDay := false
+	if valueParams, exists := dtStart.ICalParameters["VALUE"]; exists && len(valueParams) > 0 {
+		allDay = valueParams[0] == "DATE"
+	}
+
+	// Extract optional fields
+	description := ""
+	if desc := icsEvent.GetProperty(ics.ComponentPropertyDescription); desc != nil {
+		description = desc.Value
+	}
+
+	location := ""
+	if loc := icsEvent.GetProperty(ics.ComponentPropertyLocation); loc != nil {
+		location = loc.Value
+	}
+
+	// Create calendar event
+	event := &model.CalendarEvent{
+		ID:          utils.GenerateID(),
+		SourceID:    icsEvent.Id(),
+		CalendarID:  calendarID,
+		Title:       summary.Value,
+		Start:       startTime,
+		End:         endTime,
+		AllDay:      allDay,
+		Location:    location,
+		Description: description,
+		Visibility:  model.CalendarEventVisibilityInherited,
+	}
+
+	return event, nil
+}
+
+// parseICSDateTime parses ICS date/time strings
+func (s *CalendarService) parseICSDateTime(value string, params map[string][]string) (time.Time, error) {
+	// Check if it's a DATE value (all-day event)
+	if valueParams, exists := params["VALUE"]; exists && len(valueParams) > 0 && valueParams[0] == "DATE" {
+		// Parse date only: YYYYMMDD
+		return time.Parse("20060102", value)
+	}
+
+	// Check for timezone information
+	if tzidParams, exists := params["TZID"]; exists && len(tzidParams) > 0 {
+		tzid := tzidParams[0]
+		// Parse with timezone: YYYYMMDDTHHMMSS with TZID
+		loc, err := time.LoadLocation(tzid)
+		if err != nil {
+			// If timezone loading fails, use UTC
+			s.logger.Warn("Failed to load timezone, using UTC", 
+				zap.String("tzid", tzid),
+				zap.Error(err))
+			loc = time.UTC
+		}
+		
+		parsedTime, err := time.ParseInLocation("20060102T150405", value, loc)
+		if err != nil {
+			return time.Time{}, fmt.Errorf("failed to parse datetime with timezone: %w", err)
+		}
+		return parsedTime, nil
+	}
+
+	// Check if it ends with 'Z' (UTC time)
+	if strings.HasSuffix(value, "Z") {
+		return time.Parse("20060102T150405Z", value)
+	}
+
+	// Default: parse as local time
+	return time.Parse("20060102T150405", value)
 }

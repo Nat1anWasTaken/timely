@@ -15,6 +15,27 @@ definitions:
       success:
         type: boolean
     type: object
+  calendar.ImportICSRequest:
+    properties:
+      calendar_name:
+        type: string
+      ics_data:
+        type: string
+    required:
+    - calendar_name
+    - ics_data
+    type: object
+  calendar.ImportICSResponse:
+    properties:
+      calendar:
+        $ref: '#/definitions/model.Calendar'
+      events_count:
+        type: integer
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
   model.Account:
     description: OAuth account information
     properties:
@@ -647,6 +668,51 @@ paths:
       security:
       - BearerAuth: []
       summary: Import Google Calendar
+      tags:
+      - Calendar
+  /api/calendar/ics:
+    post:
+      consumes:
+      - application/json
+      - multipart/form-data
+      description: Imports an ICS file via JSON body or file upload, creates a new
+        calendar, and imports all events
+      parameters:
+      - description: Import ICS request (JSON)
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/calendar.ImportICSRequest'
+      - description: Calendar name (for file upload)
+        in: formData
+        name: calendar_name
+        type: string
+      - description: ICS file to upload
+        in: formData
+        name: ics_file
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ICS file imported successfully
+          schema:
+            $ref: '#/definitions/calendar.ImportICSResponse'
+        "400":
+          description: Bad Request - Invalid request body or ICS data
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized - Authentication required
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Import ICS File
       tags:
       - Calendar
   /api/user/profile:

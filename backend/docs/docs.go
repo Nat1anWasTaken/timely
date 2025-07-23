@@ -382,6 +382,75 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/calendar/ics": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Imports an ICS file via JSON body or file upload, creates a new calendar, and imports all events",
+                "consumes": [
+                    "application/json",
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Calendar"
+                ],
+                "summary": "Import ICS File",
+                "parameters": [
+                    {
+                        "description": "Import ICS request (JSON)",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/calendar.ImportICSRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Calendar name (for file upload)",
+                        "name": "calendar_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "ICS file to upload",
+                        "name": "ics_file",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "ICS file imported successfully",
+                        "schema": {
+                            "$ref": "#/definitions/calendar.ImportICSResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid request body or ICS data",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/user/profile": {
             "get": {
                 "security": [
@@ -446,6 +515,38 @@ const docTemplate = `{
             "properties": {
                 "calendar": {
                     "$ref": "#/definitions/model.Calendar"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "calendar.ImportICSRequest": {
+            "type": "object",
+            "required": [
+                "calendar_name",
+                "ics_data"
+            ],
+            "properties": {
+                "calendar_name": {
+                    "type": "string"
+                },
+                "ics_data": {
+                    "type": "string"
+                }
+            }
+        },
+        "calendar.ImportICSResponse": {
+            "type": "object",
+            "properties": {
+                "calendar": {
+                    "$ref": "#/definitions/model.Calendar"
+                },
+                "events_count": {
+                    "type": "integer"
                 },
                 "message": {
                     "type": "string"
