@@ -5,6 +5,7 @@
     import { createUserDataQuery } from "$lib/globalQueries";
     import UserAvatar from "./user-avatar.svelte";
     import { onMount } from "svelte";
+    import UserMenu from "./user-menu.svelte";
 
     const userDataQuery = createUserDataQuery();
 
@@ -18,10 +19,12 @@
         <CardTitle>
             <a class="text-xl" href="/">Timely</a>
         </CardTitle>
-        <div class="flex items-center">
+        <div class="flex items-center gap-2">
             <ModeToggle />
             {#if $userDataQuery.data?.user}
-                <UserAvatar user={$userDataQuery.data?.user} />
+                <UserMenu>
+                    <UserAvatar user={$userDataQuery.data?.user} />
+                </UserMenu>
             {:else}
                 <Button variant="outline" class="ml-4" href="/login">Login</Button>
             {/if}
