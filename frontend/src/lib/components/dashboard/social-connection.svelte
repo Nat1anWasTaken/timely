@@ -1,8 +1,9 @@
 <script lang="ts">
     import { Button } from "$lib/components/ui/button";
+    import type { Component } from "svelte";
 
     interface Props {
-        icon: Snippet;
+        icon: Component;
         title: string;
         description: string;
     }
@@ -12,7 +13,7 @@
 
 <div class="flex items-center justify-between rounded-lg border p-3">
     <div class="flex items-center space-x-3">
-        {@render icon()}
+        <svelte:component this={icon} class="h-5 w-5 text-muted-foreground" />
         <div>
             <p class="text-sm font-medium">{title}</p>
             <p class="text-xs text-muted-foreground">{description}</p>

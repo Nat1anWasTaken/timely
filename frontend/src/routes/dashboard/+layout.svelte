@@ -13,6 +13,8 @@
     function toggleSidebar() {
         sidebarOpen = !sidebarOpen;
     }
+
+    $inspect(currentPage);
 </script>
 
 <div class="flex h-full bg-background">

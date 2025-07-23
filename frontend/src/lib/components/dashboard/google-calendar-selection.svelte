@@ -14,18 +14,31 @@
 
     let { onBack, onSuccess }: Props = $props();
 
-    // Internal state
     let selectedCalendar: GoogleCalendar | null = $state(null);
     let selectedColor = $state("#3B82F6");
     let loading = $state(false);
 
-    // Query Google calendars
     const googleCalendarsQuery = createQuery({
         queryKey: ["google-calendars"],
         queryFn: () => api.getGoogleCalendars()
     });
 
+    const importedCalendarsQuery = createQuery({
+        queryKey: ["imported-calendars"],
+        queryFn: () => api.getImportedCalendars()
+    });
+
+    let importedGoogleCalendarIds = $derived(
+        $importedCalendarsQuery.data?.calendars
+            ?.filter((cal) => cal.source === "google")
+            ?.map((cal) => cal.source_id) || []
+    );
+
     function selectCalendar(calendar: GoogleCalendar) {
+        if (importedGoogleCalendarIds.includes(calendar.id)) {
+            return;
+        }
+
         selectedCalendar = calendar;
         // Use calendar's existing color if available
         if (calendar.backgroundColor) {
@@ -46,7 +59,7 @@
             const response = await api.importGoogleCalendar({
                 calendar_id: selectedCalendar.id
             });
-            
+
             if (response.success) {
                 toast.success("Google calendar imported successfully!");
                 onSuccess();
@@ -81,6 +94,7 @@
                 <GoogleCalendarItem
                     {calendar}
                     isSelected={selectedCalendar?.id === calendar.id}
+                    isImported={importedGoogleCalendarIds.includes(calendar.id)}
                     onSelect={selectCalendar}
                 />
             {/each}
@@ -100,10 +114,12 @@
                             <span class="text-sm text-muted-foreground">{selectedColor}</span>
                         </div>
                     </div>
-                    
+
                     <Button class="w-full" onclick={handleImport} disabled={loading}>
                         {#if loading}
-                            <div class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                            <div
+                                class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+                            ></div>
                         {/if}
                         Import Calendar
                     </Button>

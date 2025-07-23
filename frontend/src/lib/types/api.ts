@@ -61,7 +61,7 @@ export interface Account {
 }
 
 // Calendar Types
-export type CalendarSource = "google" | "isc";
+export type CalendarSource = "google" | "ics";
 export type CalendarVisibility = "public" | "private";
 export type CalendarEventVisibility = "public" | "private" | "inherited";
 
@@ -130,6 +130,12 @@ export interface CalendarEventsResponse {
     success: boolean;
     message: string;
     calendars: CalendarWithEvents[];
+}
+
+export interface ImportedCalendarsResponse {
+    success: boolean;
+    message: string;
+    calendars: Calendar[];
 }
 
 export interface CalendarListResponse {

@@ -8,6 +8,7 @@ import type {
     GoogleOAuthLoginParams,
     ImportCalendarRequest,
     ImportCalendarResponse,
+    ImportedCalendarsResponse,
     ImportICSRequest,
     ImportICSResponse,
     LoginRequest,
@@ -158,7 +159,7 @@ class ApiClient {
         if (params.force_sync !== undefined) {
             queryParams.force_sync = params.force_sync.toString();
         }
-        return this.get<CalendarEventsResponse>("/api/calendar/events", queryParams);
+        return this.get<CalendarEventsResponse>("/api/calendars/events", queryParams);
     }
 
     async getGoogleCalendars(params?: GetGoogleCalendarsParams): Promise<CalendarListResponse> {
@@ -167,17 +168,17 @@ class ApiClient {
             queryParams.force_sync = params.force_sync.toString();
         }
         return this.get<CalendarListResponse>(
-            "/api/calendar/google",
+            "/api/calendars/google",
             Object.keys(queryParams).length > 0 ? queryParams : undefined
         );
     }
 
     async importGoogleCalendar(request: ImportCalendarRequest): Promise<ImportCalendarResponse> {
-        return this.post<ImportCalendarResponse>("/api/calendar/google", request);
+        return this.post<ImportCalendarResponse>("/api/calendars/google", request);
     }
 
     async importICSFile(request: ImportICSRequest): Promise<ImportICSResponse> {
-        return this.post<ImportICSResponse>("/api/calendar/ics", request);
+        return this.post<ImportICSResponse>("/api/calendars/ics", request);
     }
 
     async importICSFileUpload(file: File, calendarName?: string): Promise<ImportICSResponse> {
@@ -187,7 +188,7 @@ class ApiClient {
             formData.append("calendar_name", calendarName);
         }
 
-        return this.request<ImportICSResponse>("/api/calendar/ics", {
+        return this.request<ImportICSResponse>("/api/calendars/ics", {
             method: "POST",
             body: formData,
             headers: {
@@ -197,9 +198,13 @@ class ApiClient {
         });
     }
 
+    async getImportedCalendars(): Promise<ImportedCalendarsResponse> {
+        return this.get<ImportedCalendarsResponse>("/api/calendars");
+    }
+
     // User Methods
     async getUserProfile(): Promise<UserProfileResponse> {
-        return this.get<UserProfileResponse>("/api/user/profile");
+        return this.get<UserProfileResponse>("/api/users/profile");
     }
 
     // Utility Methods

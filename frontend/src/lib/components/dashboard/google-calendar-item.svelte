@@ -11,17 +11,18 @@
     interface Props {
         calendar: GoogleCalendar;
         isSelected: boolean;
+        isImported: boolean;
         onSelect: (calendar: GoogleCalendar) => void;
     }
 
-    let { calendar, isSelected, onSelect }: Props = $props();
+    let { calendar, isSelected, isImported, onSelect }: Props = $props();
 </script>
 
 <Card
-    class="cursor-pointer transition-colors hover:bg-accent/50 {isSelected
-        ? 'ring-2 ring-primary'
-        : ''}"
-    onclick={() => onSelect(calendar)}
+    class="transition-colors {isImported
+        ? 'cursor-not-allowed opacity-60'
+        : 'cursor-pointer hover:bg-accent/50'} {isSelected ? 'ring-2 ring-primary' : ''}"
+    onclick={() => !isImported && onSelect(calendar)}
 >
     <CardContent class="p-4">
         <div class="flex items-start space-x-3">
@@ -36,11 +37,14 @@
                         {calendar.description}
                     </CardDescription>
                 {/if}
-                <div class="mt-2 flex items-center space-x-2 text-xs text-muted-foreground">
-                    <span>{calendar.accessRole}</span>
+                <div class="mt-2 flex items-center text-xs text-muted-foreground">
+                    <span>{calendar.timeZone}</span>
+                    <span class="mx-1">•</span>
                     {#if calendar.primary}
-                        <span class="rounded bg-primary/10 px-1.5 py-0.5 text-primary">Primary</span
-                        >
+                        <span class="text-primary">Primary</span>
+                    {/if}
+                    {#if isImported}
+                        <span>Imported</span>
                     {/if}
                 </div>
             </div>
