@@ -187,6 +187,58 @@ func (h *GoogleCalendarHandler) ImportCalendar(w http.ResponseWriter, r *http.Re
 		zap.String("calendar_summary", calendar.Summary))
 }
 
+// GetImportedCalendars retrieves all imported calendars for the authenticated user
+// @Summary Get Imported Calendars
+// @Description Retrieves all imported calendars (Google and ICS) for the authenticated user
+// @Tags Calendar
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} model.ImportedCalendarsResponse "Imported calendars retrieved successfully"
+// @Failure 401 {object} model.ErrorResponse "Unauthorized - Authentication required"
+// @Failure 500 {object} model.ErrorResponse "Internal server error"
+// @Router /api/calendars [get]
+func (h *GoogleCalendarHandler) GetImportedCalendars(w http.ResponseWriter, r *http.Request) {
+	// Get user from context (set by JWT middleware)
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		h.logger.Error("User not found in context")
+		sendErrorResponse(w, "Authentication required", "authentication_required", http.StatusUnauthorized)
+		return
+	}
+
+	h.logger.Info("Fetching imported calendars for user", zap.Uint64("user_id", user.ID))
+
+	// Get all imported calendars from service
+	calendars, err := h.calendarService.GetImportedCalendars(user.ID)
+	if err != nil {
+		h.logger.Error("Failed to get imported calendars", zap.Error(err), zap.Uint64("user_id", user.ID))
+		sendErrorResponse(w, "Failed to retrieve imported calendars", "calendar_fetch_error", http.StatusInternalServerError)
+		return
+	}
+
+	// Create success response
+	response := model.ImportedCalendarsResponse{
+		Success:   true,
+		Message:   "Imported calendars retrieved successfully",
+		Calendars: calendars,
+	}
+
+	// Send response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		h.logger.Error("Failed to encode response", zap.Error(err))
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	h.logger.Info("Successfully retrieved imported calendars",
+		zap.Uint64("user_id", user.ID),
+		zap.Int("calendar_count", len(calendars)))
+}
+
 // sendErrorResponse sends a standardized error response
 func sendErrorResponse(w http.ResponseWriter, message, errorType string, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")

@@ -327,6 +327,20 @@ definitions:
           type: string
         type: array
     type: object
+  model.ImportedCalendarsResponse:
+    description: Imported calendars response
+    properties:
+      calendars:
+        items:
+          $ref: '#/definitions/model.Calendar'
+        type: array
+      message:
+        example: Imported calendars retrieved successfully
+        type: string
+      success:
+        example: true
+        type: boolean
+    type: object
   model.LoginRequest:
     description: Login request payload
     properties:
@@ -570,6 +584,32 @@ paths:
       summary: User Registration
       tags:
       - Authentication
+  /api/calendars:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all imported calendars (Google and ICS) for the authenticated
+        user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Imported calendars retrieved successfully
+          schema:
+            $ref: '#/definitions/model.ImportedCalendarsResponse'
+        "401":
+          description: Unauthorized - Authentication required
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Imported Calendars
+      tags:
+      - Calendar
   /api/calendars/events:
     get:
       description: Retrieves all events for user's calendars within a specified time

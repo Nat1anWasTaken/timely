@@ -32,6 +32,9 @@ func CalendarRouter(r chi.Router) {
 		// Apply JWT middleware to all calendar routes
 		r.Use(middleware.JWTMiddleware(zap.L()))
 
+		// Get all imported calendars endpoint
+		r.Get("/", googleCalendarHandler.GetImportedCalendars)
+
 		// Google Calendar endpoints
 		r.Route("/google", func(r chi.Router) {
 			r.Get("/", googleCalendarHandler.GetCalendars)

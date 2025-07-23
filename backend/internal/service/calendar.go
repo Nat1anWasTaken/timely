@@ -1072,3 +1072,20 @@ func (s *CalendarService) parseICSDateTime(value string, params map[string][]str
 	// Default: parse as local time
 	return time.Parse("20060102T150405", value)
 }
+
+// GetImportedCalendars retrieves all imported calendars for a user
+func (s *CalendarService) GetImportedCalendars(userID uint64) ([]*model.Calendar, error) {
+	s.logger.Info("Getting imported calendars for user", zap.Uint64("user_id", userID))
+
+	// Get all calendars for the user
+	calendars, err := s.calendarRepo.FindByUserID(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get imported calendars: %w", err)
+	}
+
+	s.logger.Debug("Retrieved imported calendars", 
+		zap.Uint64("user_id", userID),
+		zap.Int("calendar_count", len(calendars)))
+
+	return calendars, nil
+}

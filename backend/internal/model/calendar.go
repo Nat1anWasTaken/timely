@@ -173,3 +173,11 @@ type CalendarEventsResponse struct {
 	Message   string                `json:"message" example:"Calendar events retrieved successfully"`
 	Calendars []*CalendarWithEvents `json:"calendars"`
 }
+
+// ImportedCalendarsResponse represents the response for imported calendars endpoint
+// @Description Imported calendars response
+type ImportedCalendarsResponse struct {
+	Success   bool        `json:"success" example:"true"`
+	Message   string      `json:"message" example:"Imported calendars retrieved successfully"`
+	Calendars []*Calendar `json:"calendars"`
+}

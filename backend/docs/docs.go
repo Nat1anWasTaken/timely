@@ -230,6 +230,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/calendars": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves all imported calendars (Google and ICS) for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Calendar"
+                ],
+                "summary": "Get Imported Calendars",
+                "responses": {
+                    "200": {
+                        "description": "Imported calendars retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.ImportedCalendarsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/calendars/events": {
             "get": {
                 "security": [
@@ -998,6 +1038,26 @@ const docTemplate = `{
                     "example": [
                         "[\"hangoutsMeet\"]"
                     ]
+                }
+            }
+        },
+        "model.ImportedCalendarsResponse": {
+            "description": "Imported calendars response",
+            "type": "object",
+            "properties": {
+                "calendars": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Calendar"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Imported calendars retrieved successfully"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
