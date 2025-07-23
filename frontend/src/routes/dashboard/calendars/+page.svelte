@@ -16,7 +16,6 @@
             email="john.doe@company.com"
             lastSync="Synced 5 minutes ago"
             color="blue-500"
-            provider="google"
         />
 
         <CalendarCard
@@ -24,7 +23,6 @@
             email="john.doe@gmail.com"
             lastSync="Synced 2 minutes ago"
             color="green-500"
-            provider="google"
         />
 
         <CalendarCard
@@ -32,7 +30,6 @@
             email="team-events.ics"
             lastSync="Last updated 1 day ago"
             color="purple-500"
-            provider="ics"
         />
     </div>
 
