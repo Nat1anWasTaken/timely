@@ -233,7 +233,7 @@ func (s *CalendarService) refreshTokenIfNeeded(account *model.Account) error {
 	if account.Expiry == nil {
 		s.logger.Warn("Token has no expiry time, forcing refresh", zap.Uint64("user_id", account.UserID))
 		needsRefresh = true
-	} else if time.Now().Add(5*time.Minute).After(*account.Expiry) {
+	} else if time.Now().Add(5 * time.Minute).After(*account.Expiry) {
 		s.logger.Info("Token is expired or expiring soon, refreshing",
 			zap.Uint64("user_id", account.UserID),
 			zap.Time("expiry", *account.Expiry))
@@ -598,8 +598,8 @@ func (s *CalendarService) isAuthError(err error) bool {
 	}
 	errStr := err.Error()
 	return strings.Contains(errStr, "status 401") ||
-		   strings.Contains(errStr, "UNAUTHENTICATED") ||
-		   strings.Contains(errStr, "Invalid Credentials")
+		strings.Contains(errStr, "UNAUTHENTICATED") ||
+		strings.Contains(errStr, "Invalid Credentials")
 }
 
 // forceRefreshToken forces a token refresh regardless of expiry time
@@ -927,13 +927,13 @@ func (s *CalendarService) ImportICSCalendar(userID uint64, calendarName string, 
 
 	// Create the calendar
 	calendar := &model.Calendar{
-		ID:       utils.GenerateID(),
-		UserID:   userID,
-		Source:   model.SourceISC,
-		Summary:  calendarName,
-		TimeZone: "UTC", // Default timezone, could be extracted from ICS if available
+		ID:         utils.GenerateID(),
+		UserID:     userID,
+		Source:     model.SourceISC,
+		Summary:    calendarName,
+		TimeZone:   "UTC", // Default timezone, could be extracted from ICS if available
 		Visibility: model.CalendarVisibilityPrivate,
-		SyncedAt: time.Now(),
+		SyncedAt:   time.Now(),
 	}
 
 	// Save calendar to database

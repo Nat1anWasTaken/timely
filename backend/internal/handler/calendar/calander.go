@@ -134,7 +134,6 @@ func (h *CalendarHandler) GetCalendarEvents(w http.ResponseWriter, r *http.Reque
 		zap.Int("total_events", totalEvents))
 }
 
-
 // GetImportedCalendars retrieves all imported calendars for the authenticated user
 // @Summary Get Imported Calendars
 // @Description Retrieves all imported calendars (Google and ICS) for the authenticated user

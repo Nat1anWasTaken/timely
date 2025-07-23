@@ -46,7 +46,7 @@ func JWTMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {
 
 			// Create user info from claims
 			userInfo := &UserInfo{
-				ID:    claims.UserID,
+				ID: claims.UserID,
 			}
 
 			// Add user info to request context
@@ -81,7 +81,7 @@ func OptionalJWTMiddleware(logger *zap.Logger) func(http.Handler) http.Handler {
 
 			// Create user info from claims
 			userInfo := &UserInfo{
-				ID:    claims.UserID,
+				ID: claims.UserID,
 			}
 
 			// Add user info to request context

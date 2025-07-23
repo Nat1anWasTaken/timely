@@ -51,7 +51,7 @@ type GoogleUserInfo struct {
 // UserProfileResponse represents the response for user profile endpoint
 // @Description User profile response
 type UserProfileResponse struct {
-	Success bool  `json:"success" example:"true"`
+	Success bool   `json:"success" example:"true"`
 	Message string `json:"message" example:"User profile retrieved successfully"`
-	User    *User `json:"user"`
+	User    *User  `json:"user"`
 }
