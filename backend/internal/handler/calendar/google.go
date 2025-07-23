@@ -30,7 +30,6 @@ func NewGoogleCalendarHandler(calendarService *service.CalendarService) *GoogleC
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param force_sync query bool false "Force sync from Google API regardless of cache"
 // @Success 200 {object} model.CalendarListResponse "Calendars retrieved successfully"
 // @Failure 401 {object} model.ErrorResponse "Unauthorized - Authentication required"
 // @Failure 404 {object} model.ErrorResponse "Not Found - Google token not found"
@@ -45,15 +44,8 @@ func (h *GoogleCalendarHandler) GetCalendars(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Check for force sync parameter
-	forceSync := r.URL.Query().Get("force_sync") == "true"
-
-	h.logger.Info("Fetching calendars for user", 
-		zap.Uint64("user_id", user.ID),
-		zap.Bool("force_sync", forceSync))
-
 	// Get calendars from service with smart sync
-	calendars, err := h.calendarService.GetUserCalendarsWithSync(user.ID, forceSync)
+	calendars, err := h.calendarService.GetUserCalendarsFromGoogle(user.ID)
 	if err != nil {
 		h.logger.Error("Failed to get user calendars", zap.Error(err), zap.Uint64("user_id", user.ID))
 

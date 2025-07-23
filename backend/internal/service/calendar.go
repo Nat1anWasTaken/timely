@@ -66,12 +66,17 @@ func (s *CalendarService) GetUserCalendarsWithSync(userID uint64, forceSync bool
 		return nil, fmt.Errorf("failed to get updated local calendars: %w", err)
 	}
 
-	s.logger.Debug("Retrieved calendar data", 
+	s.logger.Debug("Retrieved calendar data",
 		zap.Uint64("user_id", userID),
 		zap.Bool("synced", synced),
 		zap.Int("calendar_count", len(localCalendars)))
 
 	return s.convertLocalCalendarsToGoogle(localCalendars)
+}
+
+// GetUserCalendarsFromGoogle fetches calendars from Google API without syncing
+func (s *CalendarService) GetUserCalendarsFromGoogle(userID uint64) ([]*model.GoogleCalendar, error) {
+	return s.fetchUserCalendarsFromGoogle(userID)
 }
 
 // fetchUserCalendarsFromGoogle fetches calendars from Google API (original logic)
@@ -112,7 +117,7 @@ func (s *CalendarService) SyncIfNeeded(userID uint64, forceSync bool) (bool, err
 
 	// Check if sync is needed
 	needsSync := forceSync || len(localCalendars) == 0
-	
+
 	if !needsSync {
 		for _, calendar := range localCalendars {
 			if time.Since(calendar.SyncedAt) > 5*time.Minute {
@@ -137,7 +142,7 @@ func (s *CalendarService) SyncIfNeeded(userID uint64, forceSync bool) (bool, err
 	// Check if user has valid Google account before attempting sync
 	account, err := s.userRepo.FindGoogleAccountByUserID(userID)
 	if err != nil {
-		s.logger.Error("No Google account found for user", 
+		s.logger.Error("No Google account found for user",
 			zap.Error(err),
 			zap.Uint64("user_id", userID))
 		return false, nil // Return cached data without error
@@ -145,14 +150,14 @@ func (s *CalendarService) SyncIfNeeded(userID uint64, forceSync bool) (bool, err
 
 	// Validate account has required tokens
 	if account.AccessToken == nil || account.RefreshToken == nil {
-		s.logger.Error("Google account missing OAuth tokens", 
+		s.logger.Error("Google account missing OAuth tokens",
 			zap.Uint64("user_id", userID))
 		return false, nil // Return cached data without error
 	}
 
 	// Try to refresh token if needed
 	if err := s.refreshTokenIfNeeded(account); err != nil {
-		s.logger.Error("Failed to refresh token, using cached data", 
+		s.logger.Error("Failed to refresh token, using cached data",
 			zap.Error(err),
 			zap.Uint64("user_id", userID))
 		return false, nil // Return cached data without error
@@ -161,7 +166,7 @@ func (s *CalendarService) SyncIfNeeded(userID uint64, forceSync bool) (bool, err
 	// Sync each calendar's events
 	syncSuccessCount := 0
 	syncAttempts := 0
-	
+
 	for _, calendar := range localCalendars {
 		if calendar.SourceID != nil {
 			shouldSyncCalendar := forceSync || time.Since(calendar.SyncedAt) > 5*time.Minute
@@ -194,7 +199,7 @@ func (s *CalendarService) SyncIfNeeded(userID uint64, forceSync bool) (bool, err
 // convertLocalCalendarsToGoogle converts local calendars to Google Calendar format
 func (s *CalendarService) convertLocalCalendarsToGoogle(localCalendars []*model.Calendar) ([]*model.GoogleCalendar, error) {
 	var googleCalendars []*model.GoogleCalendar
-	
+
 	for _, localCalendar := range localCalendars {
 		if localCalendar.SourceID == nil {
 			continue
@@ -224,12 +229,12 @@ func (s *CalendarService) convertLocalCalendarsToGoogle(localCalendars []*model.
 func (s *CalendarService) refreshTokenIfNeeded(account *model.Account) error {
 	// Always try to refresh if token is expired or close to expiring
 	needsRefresh := false
-	
+
 	if account.Expiry == nil {
 		s.logger.Warn("Token has no expiry time, forcing refresh", zap.Uint64("user_id", account.UserID))
 		needsRefresh = true
 	} else if time.Now().Add(5*time.Minute).After(*account.Expiry) {
-		s.logger.Info("Token is expired or expiring soon, refreshing", 
+		s.logger.Info("Token is expired or expiring soon, refreshing",
 			zap.Uint64("user_id", account.UserID),
 			zap.Time("expiry", *account.Expiry))
 		needsRefresh = true
@@ -265,10 +270,10 @@ func (s *CalendarService) refreshTokenIfNeeded(account *model.Account) error {
 	// Refresh the token using the OAuth config
 	ctx := context.Background()
 	tokenSource := s.oauthConfig.Google.TokenSource(ctx, oauthToken)
-	
+
 	newToken, err := tokenSource.Token()
 	if err != nil {
-		s.logger.Error("Failed to refresh OAuth token", 
+		s.logger.Error("Failed to refresh OAuth token",
 			zap.Error(err),
 			zap.Uint64("user_id", account.UserID))
 		return fmt.Errorf("failed to refresh token for user %d: %w", account.UserID, err)
@@ -295,10 +300,10 @@ func (s *CalendarService) refreshTokenIfNeeded(account *model.Account) error {
 	account.RefreshToken = &refreshToken
 	account.Expiry = &newToken.Expiry
 
-	s.logger.Info("Successfully refreshed Google token", 
+	s.logger.Info("Successfully refreshed Google token",
 		zap.Uint64("user_id", account.UserID),
 		zap.Time("new_expiry", newToken.Expiry))
-	
+
 	return nil
 }
 
@@ -592,7 +597,7 @@ func (s *CalendarService) isAuthError(err error) bool {
 		return false
 	}
 	errStr := err.Error()
-	return strings.Contains(errStr, "status 401") || 
+	return strings.Contains(errStr, "status 401") ||
 		   strings.Contains(errStr, "UNAUTHENTICATED") ||
 		   strings.Contains(errStr, "Invalid Credentials")
 }
@@ -614,10 +619,10 @@ func (s *CalendarService) forceRefreshToken(account *model.Account) error {
 	// Refresh the token using the OAuth config
 	ctx := context.Background()
 	tokenSource := s.oauthConfig.Google.TokenSource(ctx, oauthToken)
-	
+
 	newToken, err := tokenSource.Token()
 	if err != nil {
-		s.logger.Error("Failed to force refresh OAuth token", 
+		s.logger.Error("Failed to force refresh OAuth token",
 			zap.Error(err),
 			zap.Uint64("user_id", account.UserID))
 		return fmt.Errorf("failed to force refresh token for user %d: %w", account.UserID, err)
@@ -644,10 +649,10 @@ func (s *CalendarService) forceRefreshToken(account *model.Account) error {
 	account.RefreshToken = &refreshToken
 	account.Expiry = &newToken.Expiry
 
-	s.logger.Info("Successfully force refreshed Google token", 
+	s.logger.Info("Successfully force refreshed Google token",
 		zap.Uint64("user_id", account.UserID),
 		zap.Time("new_expiry", newToken.Expiry))
-	
+
 	return nil
 }
 
@@ -915,7 +920,7 @@ func (s *CalendarService) SyncCalendarEvents(userID uint64, calendarID string) e
 
 // ImportICSCalendar creates a calendar from ICS data and imports all events
 func (s *CalendarService) ImportICSCalendar(userID uint64, calendarName string, icsCalendar *ics.Calendar, icsEvents []*ics.VEvent) (*model.Calendar, int, error) {
-	s.logger.Info("Importing ICS calendar", 
+	s.logger.Info("Importing ICS calendar",
 		zap.Uint64("user_id", userID),
 		zap.String("calendar_name", calendarName),
 		zap.Int("events_count", len(icsEvents)))
@@ -943,7 +948,7 @@ func (s *CalendarService) ImportICSCalendar(userID uint64, calendarName string, 
 	for _, icsEvent := range icsEvents {
 		event, err := s.convertICSEventToCalendarEvent(icsEvent, calendar.ID)
 		if err != nil {
-			s.logger.Error("Failed to convert ICS event", 
+			s.logger.Error("Failed to convert ICS event",
 				zap.Error(err),
 				zap.String("event_id", icsEvent.Id()))
 			continue
@@ -1051,12 +1056,12 @@ func (s *CalendarService) parseICSDateTime(value string, params map[string][]str
 		loc, err := time.LoadLocation(tzid)
 		if err != nil {
 			// If timezone loading fails, use UTC
-			s.logger.Warn("Failed to load timezone, using UTC", 
+			s.logger.Warn("Failed to load timezone, using UTC",
 				zap.String("tzid", tzid),
 				zap.Error(err))
 			loc = time.UTC
 		}
-		
+
 		parsedTime, err := time.ParseInLocation("20060102T150405", value, loc)
 		if err != nil {
 			return time.Time{}, fmt.Errorf("failed to parse datetime with timezone: %w", err)
@@ -1083,7 +1088,7 @@ func (s *CalendarService) GetImportedCalendars(userID uint64) ([]*model.Calendar
 		return nil, fmt.Errorf("failed to get imported calendars: %w", err)
 	}
 
-	s.logger.Debug("Retrieved imported calendars", 
+	s.logger.Debug("Retrieved imported calendars",
 		zap.Uint64("user_id", userID),
 		zap.Int("calendar_count", len(calendars)))
 

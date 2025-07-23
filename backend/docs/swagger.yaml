@@ -658,11 +658,6 @@ paths:
       consumes:
       - application/json
       description: Retrieves all Google calendars for the authenticated user
-      parameters:
-      - description: Force sync from Google API regardless of cache
-        in: query
-        name: force_sync
-        type: boolean
       produces:
       - application/json
       responses:

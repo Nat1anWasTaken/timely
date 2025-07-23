@@ -342,14 +342,6 @@
                     "Calendar"
                 ],
                 "summary": "Get User Calendars",
-                "parameters": [
-                    {
-                        "type": "boolean",
-                        "description": "Force sync from Google API regardless of cache",
-                        "name": "force_sync",
-                        "in": "query"
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Calendars retrieved successfully",
