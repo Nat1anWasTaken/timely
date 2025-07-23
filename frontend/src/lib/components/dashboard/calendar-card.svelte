@@ -40,7 +40,9 @@
     </CardHeader>
     <CardContent>
         <p class="text-sm text-muted-foreground">
-            {getSourceString(calendar.source)} • last synced {calendar.synced_at || "never"}
+            {getSourceString(calendar.source)} • last synced {calendar.synced_at
+                ? new Date(calendar.synced_at).toLocaleDateString()
+                : "never"}
         </p>
     </CardContent>
 </Card>

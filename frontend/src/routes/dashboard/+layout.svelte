@@ -1,8 +1,8 @@
 <script lang="ts">
+    import { page } from "$app/state";
     import DashboardSidebar from "$lib/components/dashboard/dashboard-sidebar.svelte";
     import { Button } from "$lib/components/ui/button";
     import { Menu } from "@lucide/svelte";
-    import { page } from "$app/state";
     import type { DashboardPage } from "./types.ts";
 
     let { children } = $props();

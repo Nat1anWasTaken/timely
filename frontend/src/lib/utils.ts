@@ -1,8 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { CalendarSource } from "./types/api";
-import { Calendar, Chrome } from "@lucide/svelte";
-import type { Component } from "svelte";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
