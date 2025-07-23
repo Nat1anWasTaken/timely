@@ -4,6 +4,7 @@
     import { Toaster } from "$lib/components/ui/sonner";
     import { QueryClient, QueryClientProvider } from "@tanstack/svelte-query";
     import { SvelteQueryDevtools } from "@tanstack/svelte-query-devtools";
+    import { ModeWatcher } from "mode-watcher";
     import "../app.css";
 
     let { children } = $props();
@@ -15,6 +16,7 @@
 
 <QueryClientProvider client={queryClient}>
     <SvelteQueryDevtools />
+    <ModeWatcher />
     <Toaster />
     <div class="flex h-screen w-screen flex-col">
         {#if !hideNavbar}
