@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/go-chi/chi/v5"
@@ -23,7 +24,7 @@ func SetupRouter() *chi.Mux {
 	// Middleware
 	r.Use(middleware.Logger)
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   strings.Split(os.Getenv("ALLOWED_ORIGINS"), ","),
 		AllowedMethods:   []string{"GET", "PUT", "POST", "DELETE", "HEAD", "OPTION"},
 		AllowedHeaders:   []string{"User-Agent", "Content-Type", "Accept", "Accept-Encoding", "Accept-Language", "Cache-Control", "Connection", "DNT", "Host", "Origin", "Pragma", "Referer"},
 		ExposedHeaders:   []string{"Link"},
@@ -82,12 +83,12 @@ func SetupGracefulShutdown(cleanup func()) {
 	go func() {
 		<-c
 		log.Println("Shutting down gracefully...")
-		
+
 		// Run cleanup function
 		if cleanup != nil {
 			cleanup()
 		}
-		
+
 		os.Exit(0)
 	}()
 }
@@ -96,7 +97,7 @@ func SetupGracefulShutdown(cleanup func()) {
 func StartServer(router *chi.Mux) {
 	utils.PrintLogo()
 	log.Println("Server starting on port 8000...")
-	
+
 	if err := http.ListenAndServe(":8000", router); err != nil {
 		log.Fatal("Server failed to start: " + err.Error())
 	}
