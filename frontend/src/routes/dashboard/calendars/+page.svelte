@@ -5,8 +5,15 @@
     import CalendarCard from "$lib/components/dashboard/calendar-card.svelte";
     import AddCalendarDialog from "$lib/components/dashboard/add-calendar-dialog.svelte";
     import { createUserDataQuery } from "$lib/globalQueries";
+    import { createQuery } from "@tanstack/svelte-query";
+    import { api } from "$lib/api";
 
     const userDataQuery = createUserDataQuery();
+
+    let importedCalendarQuery = createQuery({
+        queryKey: ["imported-calendars"],
+        queryFn: () => api.getImportedCalendars()
+    });
 </script>
 
 <div class="w-2xl max-w-[90vw] space-y-6">
@@ -15,26 +22,21 @@
     </div>
 
     <div class="space-y-4">
-        <CalendarCard
-            title="Work Calendar"
-            email="john.doe@company.com"
-            lastSync="Synced 5 minutes ago"
-            color="blue-500"
-        />
+        {#if $importedCalendarQuery.isLoading}
+            <p class="text-sm text-muted-foreground">Loading calendars...</p>
+        {:else if $importedCalendarQuery.isError}
+            <p class="text-sm text-red-500">
+                Error loading calendars: {$importedCalendarQuery.error.message}
+            </p>
+        {:else if $importedCalendarQuery.data?.calendars.length === 0 && !$userDataQuery.data?.user}
+            <p class="text-sm text-muted-foreground">
+                You have no calendars imported. Please import a calendar to get started.
+            </p>
+        {/if}
 
-        <CalendarCard
-            title="Personal Calendar"
-            email="john.doe@gmail.com"
-            lastSync="Synced 2 minutes ago"
-            color="green-500"
-        />
-
-        <CalendarCard
-            title="Team Events"
-            email="team-events.ics"
-            lastSync="Last updated 1 day ago"
-            color="purple-500"
-        />
+        {#each $importedCalendarQuery.data?.calendars! as calendar (calendar.id)}
+            <CalendarCard {calendar} />
+        {/each}
     </div>
 
     <Card class="border-dashed">

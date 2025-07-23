@@ -7,33 +7,28 @@
         CardHeader,
         CardTitle
     } from "$lib/components/ui/card";
-    import { Calendar, Settings } from "@lucide/svelte";
-    import type { Snippet } from "svelte";
+    import type { Calendar } from "$lib/types/api";
+    import { getSourceString } from "$lib/utils";
+    import { Calendar as CalendarIcon } from "@lucide/svelte";
+    import { Settings } from "@lucide/svelte";
+    import type { Component } from "svelte";
 
     interface Props {
-        title: string;
-        email: string;
-        lastSync: string;
-        color: string;
-        icon?: Snippet;
+        calendar: Calendar;
     }
 
-    let { title, email, lastSync, color, icon }: Props = $props();
+    let { calendar }: Props = $props();
 </script>
 
-<Card>
+<Card class="gap-3">
     <CardHeader>
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="h-4 w-4 rounded-full bg-{color}">
-                    {#if icon}
-                        {@render icon()}
-                    {:else}
-                        <Calendar class="h-4 w-4" />
-                    {/if}
+                <div class="h-4 w-4 rounded-full text-[{calendar.event_color}]">
+                    <CalendarIcon class="h-4 w-4" />
                 </div>
                 <div>
-                    <CardTitle class="text-lg">{title}</CardTitle>
+                    <CardTitle class="text-lg">{calendar.summary}</CardTitle>
                     <CardDescription class="flex items-center gap-2"></CardDescription>
                 </div>
             </div>
@@ -45,7 +40,7 @@
     </CardHeader>
     <CardContent>
         <p class="text-sm text-muted-foreground">
-            {email} • {lastSync}
+            {getSourceString(calendar.source)} • last synced {calendar.synced_at || "never"}
         </p>
     </CardContent>
 </Card>
