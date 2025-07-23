@@ -1241,7 +1241,7 @@ func (s *CalendarService) GetPublicUserCalendarEvents(userID uint64, startTime, 
 	// Group events by calendar ID and filter for public visibility
 	eventsByCalendar := make(map[uint64][]*model.CalendarEvent)
 	calendarMap := make(map[uint64]*model.Calendar)
-	
+
 	// Create calendar lookup map
 	for _, calendar := range calendars {
 		calendarMap[calendar.ID] = calendar
@@ -1277,7 +1277,7 @@ func (s *CalendarService) GetPublicUserCalendarEvents(userID uint64, startTime, 
 	var calendarsWithEvents []*model.CalendarWithEvents
 	for _, calendar := range calendars {
 		calendarEvents := eventsByCalendar[calendar.ID]
-		
+
 		// Only include calendars that have public events or are explicitly public
 		if len(calendarEvents) > 0 || calendar.Visibility == model.CalendarVisibilityPublic {
 			if calendarEvents == nil {
