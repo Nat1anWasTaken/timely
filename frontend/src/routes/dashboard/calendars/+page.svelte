@@ -3,6 +3,10 @@
     import { Card, CardContent } from "$lib/components/ui/card/index.ts";
     import { Calendar } from "@lucide/svelte";
     import CalendarCard from "$lib/components/dashboard/calendar-card.svelte";
+    import AddCalendarDialog from "$lib/components/dashboard/add-calendar-dialog.svelte";
+    import { createUserDataQuery } from "$lib/globalQueries";
+
+    const userDataQuery = createUserDataQuery();
 </script>
 
 <div class="w-2xl max-w-[90vw] space-y-6">
@@ -43,7 +47,9 @@
                         Connect Google, Outlook, or upload an ICS file
                     </p>
                 </div>
-                <Button size="sm">Add Calendar</Button>
+                <AddCalendarDialog user={$userDataQuery.data?.user}>
+                    <Button size="sm">Add Calendar</Button>
+                </AddCalendarDialog>
             </div>
         </CardContent>
     </Card>
