@@ -704,6 +704,7 @@ func (s *CalendarService) convertGoogleEventToCalendarEvent(googleEvent *model.G
 
 	// Create calendar event
 	event := &model.CalendarEvent{
+		ID:          utils.GenerateID(),
 		SourceID:    googleEvent.ID,
 		CalendarID:  calendarID,
 		Title:       googleEvent.Summary,

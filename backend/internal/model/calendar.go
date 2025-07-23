@@ -31,7 +31,7 @@ const (
 // CalendarEvent represents an event in the calendar
 // @Description Calendar event
 type CalendarEvent struct {
-	ID          uint64                  `json:"id,string"`          // Google Event ID
+	ID          uint64                  `json:"id,string"`          // Unique snowflake ID
 	SourceID    string                  `json:"source_id"`          // Source calendar ID
 	CalendarID  uint64                  `json:"calendar_id,string"` // calendar ID
 	Title       string                  `json:"title"`              // Event title (summary)
