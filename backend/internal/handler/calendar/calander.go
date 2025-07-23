@@ -187,6 +187,159 @@ func (h *CalendarHandler) GetImportedCalendars(w http.ResponseWriter, r *http.Re
 		zap.Int("calendar_count", len(calendars)))
 }
 
+// UpdateCalendar updates an existing calendar
+// @Summary Update Calendar
+// @Description Updates an existing calendar's properties such as summary, description, visibility, etc.
+// @Tags Calendar
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Calendar ID"
+// @Param request body model.CalendarUpdateRequest true "Calendar update request"
+// @Success 200 {object} model.CalendarUpdateResponse "Calendar updated successfully"
+// @Failure 400 {object} model.ErrorResponse "Bad Request - Invalid request body or calendar ID"
+// @Failure 401 {object} model.ErrorResponse "Unauthorized - Authentication required"
+// @Failure 404 {object} model.ErrorResponse "Not Found - Calendar not found or access denied"
+// @Failure 500 {object} model.ErrorResponse "Internal server error"
+// @Router /api/calendars/{id} [put]
+func (h *CalendarHandler) UpdateCalendar(w http.ResponseWriter, r *http.Request) {
+	// Get user from context (set by JWT middleware)
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		h.logger.Error("User not found in context")
+		sendErrorResponse(w, "Authentication required", "authentication_required", http.StatusUnauthorized)
+		return
+	}
+
+	// Get calendar ID from URL path
+	calendarID := r.PathValue("id")
+	if calendarID == "" {
+		sendErrorResponse(w, "Calendar ID is required", "missing_calendar_id", http.StatusBadRequest)
+		return
+	}
+
+	// Parse request body
+	var updateRequest model.CalendarUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&updateRequest); err != nil {
+		h.logger.Error("Failed to decode request body", zap.Error(err))
+		sendErrorResponse(w, "Invalid request body", "invalid_request", http.StatusBadRequest)
+		return
+	}
+
+	h.logger.Info("Updating calendar for user",
+		zap.Uint64("user_id", user.ID),
+		zap.String("calendar_id", calendarID))
+
+	// Update calendar using service
+	calendar, err := h.calendarService.UpdateCalendar(user.ID, calendarID, &updateRequest)
+	if err != nil {
+		h.logger.Error("Failed to update calendar", zap.Error(err), zap.Uint64("user_id", user.ID))
+
+		// Handle specific error cases
+		switch {
+		case err.Error() == "calendar not found or access denied":
+			sendErrorResponse(w, "Calendar not found or access denied", "calendar_not_found", http.StatusNotFound)
+		case err.Error() == "failed to find calendar: record not found":
+			sendErrorResponse(w, "Calendar not found", "calendar_not_found", http.StatusNotFound)
+		default:
+			sendErrorResponse(w, "Failed to update calendar", "calendar_update_error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Create success response
+	response := model.CalendarUpdateResponse{
+		Success:  true,
+		Message:  "Calendar updated successfully",
+		Calendar: calendar,
+	}
+
+	// Send response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		h.logger.Error("Failed to encode response", zap.Error(err))
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	h.logger.Info("Successfully updated calendar",
+		zap.Uint64("user_id", user.ID),
+		zap.String("calendar_id", calendarID),
+		zap.String("calendar_summary", calendar.Summary))
+}
+
+// DeleteCalendar deletes an existing calendar and all its events
+// @Summary Delete Calendar
+// @Description Deletes an existing calendar and all its associated events
+// @Tags Calendar
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Calendar ID"
+// @Success 200 {object} model.CalendarDeleteResponse "Calendar deleted successfully"
+// @Failure 400 {object} model.ErrorResponse "Bad Request - Invalid calendar ID"
+// @Failure 401 {object} model.ErrorResponse "Unauthorized - Authentication required"
+// @Failure 404 {object} model.ErrorResponse "Not Found - Calendar not found or access denied"
+// @Failure 500 {object} model.ErrorResponse "Internal server error"
+// @Router /api/calendars/{id} [delete]
+func (h *CalendarHandler) DeleteCalendar(w http.ResponseWriter, r *http.Request) {
+	// Get user from context (set by JWT middleware)
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		h.logger.Error("User not found in context")
+		sendErrorResponse(w, "Authentication required", "authentication_required", http.StatusUnauthorized)
+		return
+	}
+
+	// Get calendar ID from URL path
+	calendarID := r.PathValue("id")
+	if calendarID == "" {
+		sendErrorResponse(w, "Calendar ID is required", "missing_calendar_id", http.StatusBadRequest)
+		return
+	}
+
+	h.logger.Info("Deleting calendar for user",
+		zap.Uint64("user_id", user.ID),
+		zap.String("calendar_id", calendarID))
+
+	// Delete calendar using service
+	if err := h.calendarService.DeleteCalendar(user.ID, calendarID); err != nil {
+		h.logger.Error("Failed to delete calendar", zap.Error(err), zap.Uint64("user_id", user.ID))
+
+		// Handle specific error cases
+		switch {
+		case err.Error() == "calendar not found or access denied":
+			sendErrorResponse(w, "Calendar not found or access denied", "calendar_not_found", http.StatusNotFound)
+		case err.Error() == "failed to find calendar: record not found":
+			sendErrorResponse(w, "Calendar not found", "calendar_not_found", http.StatusNotFound)
+		default:
+			sendErrorResponse(w, "Failed to delete calendar", "calendar_delete_error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Create success response
+	response := model.CalendarDeleteResponse{
+		Success: true,
+		Message: "Calendar deleted successfully",
+	}
+
+	// Send response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		h.logger.Error("Failed to encode response", zap.Error(err))
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	h.logger.Info("Successfully deleted calendar",
+		zap.Uint64("user_id", user.ID),
+		zap.String("calendar_id", calendarID))
+}
+
 // sendErrorResponse sends a standardized error response
 func sendErrorResponse(w http.ResponseWriter, message, errorType string, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")

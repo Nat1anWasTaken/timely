@@ -1094,3 +1094,103 @@ func (s *CalendarService) GetImportedCalendars(userID uint64) ([]*model.Calendar
 
 	return calendars, nil
 }
+
+// UpdateCalendar updates an existing calendar with new data
+func (s *CalendarService) UpdateCalendar(userID uint64, calendarID string, updateRequest *model.CalendarUpdateRequest) (*model.Calendar, error) {
+	s.logger.Info("Updating calendar",
+		zap.Uint64("user_id", userID),
+		zap.String("calendar_id", calendarID))
+
+	// Find the calendar and verify ownership
+	calendar, err := s.calendarRepo.FindByID(calendarID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find calendar: %w", err)
+	}
+
+	// Verify user owns this calendar
+	if calendar.UserID != userID {
+		return nil, fmt.Errorf("calendar not found or access denied")
+	}
+
+	// Update fields if provided
+	updated := false
+	if updateRequest.Summary != nil {
+		calendar.Summary = *updateRequest.Summary
+		updated = true
+	}
+	if updateRequest.Description != nil {
+		calendar.Description = updateRequest.Description
+		updated = true
+	}
+	if updateRequest.EventNickname != nil {
+		calendar.EventNickname = updateRequest.EventNickname
+		updated = true
+	}
+	if updateRequest.EventColor != nil {
+		calendar.EventColor = updateRequest.EventColor
+		updated = true
+	}
+	if updateRequest.Visibility != nil {
+		calendar.Visibility = *updateRequest.Visibility
+		updated = true
+	}
+	if updateRequest.TimeZone != nil {
+		calendar.TimeZone = *updateRequest.TimeZone
+		updated = true
+	}
+
+	if !updated {
+		s.logger.Info("No fields to update", zap.String("calendar_id", calendarID))
+		return calendar, nil
+	}
+
+	// Save updated calendar
+	if err := s.calendarRepo.Update(calendar); err != nil {
+		return nil, fmt.Errorf("failed to update calendar: %w", err)
+	}
+
+	s.logger.Info("Successfully updated calendar",
+		zap.Uint64("user_id", userID),
+		zap.String("calendar_id", calendarID),
+		zap.String("summary", calendar.Summary))
+
+	return calendar, nil
+}
+
+// DeleteCalendar deletes a calendar and all its events
+func (s *CalendarService) DeleteCalendar(userID uint64, calendarID string) error {
+	s.logger.Info("Deleting calendar",
+		zap.Uint64("user_id", userID),
+		zap.String("calendar_id", calendarID))
+
+	// Find the calendar and verify ownership
+	calendar, err := s.calendarRepo.FindByID(calendarID)
+	if err != nil {
+		return fmt.Errorf("failed to find calendar: %w", err)
+	}
+
+	// Verify user owns this calendar
+	if calendar.UserID != userID {
+		return fmt.Errorf("calendar not found or access denied")
+	}
+
+	// Delete all events for this calendar first
+	if err := s.calendarRepo.DeleteEventsByCalendarID(calendar.ID); err != nil {
+		s.logger.Error("Failed to delete calendar events",
+			zap.Error(err),
+			zap.Uint64("calendar_id", calendar.ID))
+		return fmt.Errorf("failed to delete calendar events: %w", err)
+	}
+
+	// Delete the calendar itself
+	if err := s.calendarRepo.Delete(calendarID); err != nil {
+		return fmt.Errorf("failed to delete calendar: %w", err)
+	}
+
+	s.logger.Info("Successfully deleted calendar and its events",
+		zap.Uint64("user_id", userID),
+		zap.String("calendar_id", calendarID),
+		zap.String("summary", calendar.Summary))
+
+	return nil
+}

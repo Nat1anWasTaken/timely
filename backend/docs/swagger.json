@@ -507,6 +507,132 @@
                 }
             }
         },
+        "/api/calendars/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates an existing calendar's properties such as summary, description, visibility, etc.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Calendar"
+                ],
+                "summary": "Update Calendar",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Calendar ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Calendar update request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CalendarUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Calendar updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.CalendarUpdateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid request body or calendar ID",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Calendar not found or access denied",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes an existing calendar and all its associated events",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Calendar"
+                ],
+                "summary": "Delete Calendar",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Calendar ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Calendar deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.CalendarDeleteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid calendar ID",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Calendar not found or access denied",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/users/profile": {
             "get": {
                 "security": [
@@ -723,6 +849,20 @@
                 }
             }
         },
+        "model.CalendarDeleteResponse": {
+            "description": "Calendar delete response",
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Calendar deleted successfully"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
         "model.CalendarEvent": {
             "description": "Calendar event",
             "type": "object",
@@ -848,6 +988,57 @@
                 "SourceGoogle",
                 "SourceISC"
             ]
+        },
+        "model.CalendarUpdateRequest": {
+            "description": "Calendar update request",
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Updated calendar description"
+                },
+                "event_color": {
+                    "type": "string",
+                    "example": "#ff5722"
+                },
+                "event_nickname": {
+                    "type": "string",
+                    "example": "Work"
+                },
+                "summary": {
+                    "type": "string",
+                    "example": "My Updated Calendar"
+                },
+                "time_zone": {
+                    "type": "string",
+                    "example": "America/New_York"
+                },
+                "visibility": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.CalendarVisibility"
+                        }
+                    ],
+                    "example": "private"
+                }
+            }
+        },
+        "model.CalendarUpdateResponse": {
+            "description": "Calendar update response",
+            "type": "object",
+            "properties": {
+                "calendar": {
+                    "$ref": "#/definitions/model.Calendar"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Calendar updated successfully"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
         },
         "model.CalendarVisibility": {
             "type": "string",

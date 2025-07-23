@@ -34,6 +34,10 @@ func CalendarRouter(r chi.Router) {
 		// Get all imported calendars endpoint
 		r.Get("/", calendarHandler.GetImportedCalendars)
 
+		// Individual calendar operations (update/delete)
+		r.Put("/{id}", calendarHandler.UpdateCalendar)
+		r.Delete("/{id}", calendarHandler.DeleteCalendar)
+
 		// Google Calendar endpoints
 		r.Route("/google", func(r chi.Router) {
 			r.Get("/", calendarHandler.GetCalendars)

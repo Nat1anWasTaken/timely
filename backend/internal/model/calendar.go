@@ -181,3 +181,29 @@ type ImportedCalendarsResponse struct {
 	Message   string      `json:"message" example:"Imported calendars retrieved successfully"`
 	Calendars []*Calendar `json:"calendars"`
 }
+
+// CalendarUpdateRequest represents the request body for updating a calendar
+// @Description Calendar update request
+type CalendarUpdateRequest struct {
+	Summary       *string             `json:"summary,omitempty" example:"My Updated Calendar"`
+	Description   *string             `json:"description,omitempty" example:"Updated calendar description"`
+	EventNickname *string             `json:"event_nickname,omitempty" example:"Work"`
+	EventColor    *string             `json:"event_color,omitempty" example:"#ff5722"`
+	Visibility    *CalendarVisibility `json:"visibility,omitempty" example:"private"`
+	TimeZone      *string             `json:"time_zone,omitempty" example:"America/New_York"`
+}
+
+// CalendarUpdateResponse represents the response for updating a calendar
+// @Description Calendar update response
+type CalendarUpdateResponse struct {
+	Success  bool      `json:"success" example:"true"`
+	Message  string    `json:"message" example:"Calendar updated successfully"`
+	Calendar *Calendar `json:"calendar"`
+}
+
+// CalendarDeleteResponse represents the response for deleting a calendar
+// @Description Calendar delete response
+type CalendarDeleteResponse struct {
+	Success bool   `json:"success" example:"true"`
+	Message string `json:"message" example:"Calendar deleted successfully"`
+}
