@@ -24,8 +24,7 @@ func CalendarRouter(r chi.Router) {
 	calendarService := service.NewCalendarService(userRepo, calendarRepo, oauthConfig)
 
 	// Initialize handlers
-	googleCalendarHandler := calendar.NewGoogleCalendarHandler(calendarService)
-	icsHandler := calendar.NewICSHandler(calendarService)
+	calendarHandler := calendar.NewCalendarHandler(calendarService)
 
 	// Calendar routes with JWT middleware
 	r.Route("/calendars", func(r chi.Router) {
@@ -33,20 +32,20 @@ func CalendarRouter(r chi.Router) {
 		r.Use(middleware.JWTMiddleware(zap.L()))
 
 		// Get all imported calendars endpoint
-		r.Get("/", googleCalendarHandler.GetImportedCalendars)
+		r.Get("/", calendarHandler.GetImportedCalendars)
 
 		// Google Calendar endpoints
 		r.Route("/google", func(r chi.Router) {
-			r.Get("/", googleCalendarHandler.GetCalendars)
-			r.Post("/", googleCalendarHandler.ImportCalendar)
+			r.Get("/", calendarHandler.GetCalendars)
+			r.Post("/", calendarHandler.ImportCalendar)
 		})
 
 		// ICS Calendar endpoints
 		r.Route("/ics", func(r chi.Router) {
-			r.Post("/", icsHandler.ImportICS)
+			r.Post("/", calendarHandler.ImportICS)
 		})
 
 		// Calendar events endpoint
-		r.Get("/events", googleCalendarHandler.GetCalendarEvents)
+		r.Get("/events", calendarHandler.GetCalendarEvents)
 	})
 }

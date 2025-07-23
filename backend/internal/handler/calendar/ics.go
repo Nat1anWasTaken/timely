@@ -12,20 +12,7 @@ import (
 
 	"github.com/NathanWasTaken/timely/backend/internal/middleware"
 	"github.com/NathanWasTaken/timely/backend/internal/model"
-	"github.com/NathanWasTaken/timely/backend/internal/service"
 )
-
-type ICSHandler struct {
-	calendarService *service.CalendarService
-	logger          *zap.Logger
-}
-
-func NewICSHandler(calendarService *service.CalendarService) *ICSHandler {
-	return &ICSHandler{
-		calendarService: calendarService,
-		logger:          zap.L(),
-	}
-}
 
 // ImportICSRequest represents the request body for importing an ICS file
 type ImportICSRequest struct {
@@ -56,7 +43,7 @@ type ImportICSResponse struct {
 // @Failure 401 {object} model.ErrorResponse "Unauthorized - Authentication required"
 // @Failure 500 {object} model.ErrorResponse "Internal server error"
 // @Router /api/calendars/ics [post]
-func (h *ICSHandler) ImportICS(w http.ResponseWriter, r *http.Request) {
+func (h *CalendarHandler) ImportICS(w http.ResponseWriter, r *http.Request) {
 	// Get user from context (set by JWT middleware)
 	user, ok := middleware.GetUserFromContext(r.Context())
 	if !ok {
@@ -140,7 +127,7 @@ func (h *ICSHandler) ImportICS(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleJSONRequest handles JSON request body for ICS import
-func (h *ICSHandler) handleJSONRequest(r *http.Request) (string, string, error) {
+func (h *CalendarHandler) handleJSONRequest(r *http.Request) (string, string, error) {
 	var req ImportICSRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return "", "", fmt.Errorf("invalid request body: %w", err)
@@ -155,7 +142,7 @@ func (h *ICSHandler) handleJSONRequest(r *http.Request) (string, string, error) 
 }
 
 // handleFileUpload handles multipart form file upload for ICS import
-func (h *ICSHandler) handleFileUpload(r *http.Request) (string, string, error) {
+func (h *CalendarHandler) handleFileUpload(r *http.Request) (string, string, error) {
 	// Parse multipart form
 	err := r.ParseMultipartForm(10 << 20) // 10 MB max
 	if err != nil {
@@ -185,7 +172,7 @@ func (h *ICSHandler) handleFileUpload(r *http.Request) (string, string, error) {
 }
 
 // parseICSData parses ICS data and extracts calendar and event information
-func (h *ICSHandler) parseICSData(icsData string) (*ics.Calendar, []*ics.VEvent, error) {
+func (h *CalendarHandler) parseICSData(icsData string) (*ics.Calendar, []*ics.VEvent, error) {
 	// Parse the ICS data
 	cal, err := ics.ParseCalendar(strings.NewReader(icsData))
 	if err != nil {
@@ -205,7 +192,7 @@ func (h *ICSHandler) parseICSData(icsData string) (*ics.Calendar, []*ics.VEvent,
 }
 
 // extractCalendarName extracts calendar name from ICS properties
-func (h *ICSHandler) extractCalendarName(cal *ics.Calendar) string {
+func (h *CalendarHandler) extractCalendarName(cal *ics.Calendar) string {
 	// Try to get X-WR-CALNAME property (common non-standard property for calendar name)
 	for _, prop := range cal.CalendarProperties {
 		if prop.IANAToken == "X-WR-CALNAME" && prop.Value != "" {
