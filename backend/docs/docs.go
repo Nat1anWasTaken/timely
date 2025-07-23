@@ -887,7 +887,7 @@ const docTemplate = `{
                 "event_color": {
                     "type": "string"
                 },
-                "event_nickname": {
+                "event_redaction": {
                     "type": "string"
                 },
                 "id": {
@@ -964,7 +964,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "description": "Google Event ID",
+                    "description": "Unique snowflake ID",
                     "type": "string",
                     "example": "0"
                 },
@@ -1073,7 +1073,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "#ff5722"
                 },
-                "event_nickname": {
+                "event_redaction": {
                     "type": "string",
                     "example": "Work"
                 },
@@ -1136,7 +1136,7 @@ const docTemplate = `{
                 "event_color": {
                     "type": "string"
                 },
-                "event_nickname": {
+                "event_redaction": {
                     "type": "string"
                 },
                 "events": {

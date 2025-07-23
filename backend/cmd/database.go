@@ -3,9 +3,10 @@ package cmd
 import (
 	"log"
 
+	"github.com/go-gormigrate/gormigrate/v2"
+
 	"github.com/NathanWasTaken/timely/backend/internal/config"
 	"github.com/NathanWasTaken/timely/backend/internal/migrations"
-	"github.com/go-gormigrate/gormigrate/v2"
 )
 
 // InitializeDatabase sets up and migrates the database

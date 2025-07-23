@@ -776,8 +776,8 @@ func (s *CalendarService) GetUserCalendarEventsWithSync(userID uint64, startTime
 			calendarEvents = []*model.CalendarEvent{}
 		}
 
-		// Apply calendar event nickname to event titles
-		s.applyEventNickname(calendarEvents, calendar)
+		// Apply calendar event redaction to event titles
+		s.applyEventRedaction(calendarEvents, calendar)
 
 		calendarWithEvents := &model.CalendarWithEvents{
 			Calendar: calendar,
@@ -1126,8 +1126,8 @@ func (s *CalendarService) UpdateCalendar(userID uint64, calendarID string, updat
 		calendar.Description = updateRequest.Description
 		updated = true
 	}
-	if updateRequest.EventNickname != nil {
-		calendar.EventNickname = updateRequest.EventNickname
+	if updateRequest.EventRedaction != nil {
+		calendar.EventRedaction = updateRequest.EventRedaction
 		updated = true
 	}
 	if updateRequest.EventColor != nil {
@@ -1285,8 +1285,8 @@ func (s *CalendarService) GetPublicUserCalendarEvents(userID uint64, startTime, 
 				calendarEvents = []*model.CalendarEvent{}
 			}
 
-			// Apply calendar event nickname to event titles
-			s.applyEventNickname(calendarEvents, calendar)
+			// Apply calendar event redaction to event titles
+			s.applyEventRedaction(calendarEvents, calendar)
 
 			calendarWithEvents := &model.CalendarWithEvents{
 				Calendar: calendar,
@@ -1312,18 +1312,18 @@ func (s *CalendarService) GetPublicUserCalendarEvents(userID uint64, startTime, 
 	return calendarsWithEvents, nil
 }
 
-// applyEventNickname applies the calendar's event nickname to event titles if nickname is set
-func (s *CalendarService) applyEventNickname(events []*model.CalendarEvent, calendar *model.Calendar) {
-	// Only apply nickname if it's set and not empty
-	if calendar.EventNickname == nil || *calendar.EventNickname == "" {
+// applyEventRedaction applies the calendar's event redaction to event titles if redaction is set
+func (s *CalendarService) applyEventRedaction(events []*model.CalendarEvent, calendar *model.Calendar) {
+	// Only apply redaction if it's set and not empty
+	if calendar.EventRedaction == nil || *calendar.EventRedaction == "" {
 		return
 	}
 
-	// Apply nickname as prefix to each event title
-	nickname := *calendar.EventNickname
+	// Apply redaction as prefix to each event title
+	redaction := *calendar.EventRedaction
 	for _, event := range events {
 		if event.Title != "" {
-			event.Title = fmt.Sprintf("[%s] %s", nickname, event.Title)
+			event.Title = fmt.Sprintf("[%s] %s", redaction, event.Title)
 		}
 	}
 }

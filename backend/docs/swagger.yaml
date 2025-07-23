@@ -90,7 +90,7 @@ definitions:
         type: string
       event_color:
         type: string
-      event_nickname:
+      event_redaction:
         type: string
       id:
         example: "0"
@@ -145,7 +145,7 @@ definitions:
         description: Optional display color
         type: string
       id:
-        description: Google Event ID
+        description: Unique snowflake ID
         example: "0"
         type: string
       location:
@@ -222,7 +222,7 @@ definitions:
       event_color:
         example: '#ff5722'
         type: string
-      event_nickname:
+      event_redaction:
         example: Work
         type: string
       summary:
@@ -265,7 +265,7 @@ definitions:
         type: string
       event_color:
         type: string
-      event_nickname:
+      event_redaction:
         type: string
       events:
         items:

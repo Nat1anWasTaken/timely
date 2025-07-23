@@ -50,20 +50,20 @@ type CalendarEvent struct {
 // Calendar represents a calendar
 // @Description Calendar
 type Calendar struct {
-	ID            uint64             `json:"id,string" gorm:"primaryKey"`
-	UserID        uint64             `json:"user_id,string" gorm:"index"`
-	SourceID      *string            `json:"source_id"`
-	Source        CalendarSource     `json:"source"`
-	Summary       string             `json:"summary"`
-	TimeZone      string             `json:"time_zone"`
-	Description   *string            `json:"description,omitempty"`
-	EventNickname *string            `json:"event_nickname,omitempty"`
-	EventColor    *string            `json:"event_color,omitempty"`
-	Visibility    CalendarVisibility `json:"visibility"`
-	SyncedAt      time.Time          `json:"synced_at"`
-	CreatedAt     time.Time          `json:"created_at"`
-	UpdatedAt     time.Time          `json:"updated_at"`
-	DeletedAt     gorm.DeletedAt     `json:"-" gorm:"index"`
+	ID             uint64             `json:"id,string" gorm:"primaryKey"`
+	UserID         uint64             `json:"user_id,string" gorm:"index"`
+	SourceID       *string            `json:"source_id"`
+	Source         CalendarSource     `json:"source"`
+	Summary        string             `json:"summary"`
+	TimeZone       string             `json:"time_zone"`
+	Description    *string            `json:"description,omitempty"`
+	EventRedaction *string            `json:"event_redaction,omitempty"`
+	EventColor     *string            `json:"event_color,omitempty"`
+	Visibility     CalendarVisibility `json:"visibility"`
+	SyncedAt       time.Time          `json:"synced_at"`
+	CreatedAt      time.Time          `json:"created_at"`
+	UpdatedAt      time.Time          `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt     `json:"-" gorm:"index"`
 }
 
 // GoogleCalendar represents a calendar from Google Calendar API
@@ -185,12 +185,12 @@ type ImportedCalendarsResponse struct {
 // CalendarUpdateRequest represents the request body for updating a calendar
 // @Description Calendar update request
 type CalendarUpdateRequest struct {
-	Summary       *string             `json:"summary,omitempty" example:"My Updated Calendar"`
-	Description   *string             `json:"description,omitempty" example:"Updated calendar description"`
-	EventNickname *string             `json:"event_nickname,omitempty" example:"Work"`
-	EventColor    *string             `json:"event_color,omitempty" example:"#ff5722"`
-	Visibility    *CalendarVisibility `json:"visibility,omitempty" example:"private"`
-	TimeZone      *string             `json:"time_zone,omitempty" example:"America/New_York"`
+	Summary        *string             `json:"summary,omitempty" example:"My Updated Calendar"`
+	Description    *string             `json:"description,omitempty" example:"Updated calendar description"`
+	EventRedaction *string             `json:"event_redaction,omitempty" example:"Work"`
+	EventColor     *string             `json:"event_color,omitempty" example:"#ff5722"`
+	Visibility     *CalendarVisibility `json:"visibility,omitempty" example:"private"`
+	TimeZone       *string             `json:"time_zone,omitempty" example:"America/New_York"`
 }
 
 // CalendarUpdateResponse represents the response for updating a calendar
