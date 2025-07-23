@@ -31,6 +31,12 @@ export interface AuthResponse {
     user: User;
 }
 
+export interface UserProfileResponse {
+    success: boolean;
+    message: string;
+    user: User;
+}
+
 // User Types
 export interface User {
     id: string;
@@ -145,11 +151,16 @@ export interface ImportCalendarResponse {
 export interface GetCalendarEventsParams {
     start_timestamp: string;
     end_timestamp: string;
+    force_sync?: boolean;
 }
 
 export interface GoogleOAuthCallbackParams {
     code: string;
     state: string;
+}
+
+export interface GetGoogleCalendarsParams {
+    force_sync?: boolean;
 }
 
 export interface GoogleOAuthLoginParams {

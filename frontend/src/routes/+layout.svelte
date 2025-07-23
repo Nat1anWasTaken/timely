@@ -1,10 +1,10 @@
 <script lang="ts">
     import { page } from "$app/state";
-    import Navbar from "$lib/components/navbar.svelte";
-    import { QueryClient, QueryClientProvider } from "@tanstack/svelte-query";
-    import { ModeWatcher } from "mode-watcher";
-    import "../app.css";
+    import Navbar from "$lib/components/navbar/navbar.svelte";
     import { Toaster } from "$lib/components/ui/sonner";
+    import { QueryClient, QueryClientProvider } from "@tanstack/svelte-query";
+    import { SvelteQueryDevtools } from "@tanstack/svelte-query-devtools";
+    import "../app.css";
 
     let { children } = $props();
 
@@ -14,7 +14,7 @@
 </script>
 
 <QueryClientProvider client={queryClient}>
-    <ModeWatcher />
+    <SvelteQueryDevtools />
     <Toaster />
     <div class="flex h-screen w-screen flex-col">
         {#if !hideNavbar}

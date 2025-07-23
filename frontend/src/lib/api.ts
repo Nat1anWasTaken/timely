@@ -1,13 +1,16 @@
+import { env } from "$env/dynamic/public";
 import type {
     AuthResponse,
     CalendarEventsResponse,
     CalendarListResponse,
     GetCalendarEventsParams,
+    GetGoogleCalendarsParams,
     GoogleOAuthLoginParams,
     ImportCalendarRequest,
     ImportCalendarResponse,
     LoginRequest,
-    RegisterRequest
+    RegisterRequest,
+    UserProfileResponse
 } from "./types/api.js";
 
 export class ApiError extends Error {
@@ -22,7 +25,7 @@ export class ApiError extends Error {
 }
 
 class ApiClient {
-    private baseUrl: string;
+    public baseUrl: string;
     private token: string | null = null;
 
     constructor(baseUrl: string = "http://localhost:8000") {
@@ -61,6 +64,7 @@ class ApiClient {
 
         const config: RequestInit = {
             ...options,
+            credentials: "include",
             headers: {
                 ...defaultHeaders,
                 ...options.headers
@@ -147,15 +151,30 @@ class ApiClient {
             start_timestamp: params.start_timestamp,
             end_timestamp: params.end_timestamp
         };
+        if (params.force_sync !== undefined) {
+            queryParams.force_sync = params.force_sync.toString();
+        }
         return this.get<CalendarEventsResponse>("/api/calendar/events", queryParams);
     }
 
-    async getGoogleCalendars(): Promise<CalendarListResponse> {
-        return this.get<CalendarListResponse>("/api/calendar/google");
+    async getGoogleCalendars(params?: GetGoogleCalendarsParams): Promise<CalendarListResponse> {
+        const queryParams: Record<string, string> = {};
+        if (params?.force_sync !== undefined) {
+            queryParams.force_sync = params.force_sync.toString();
+        }
+        return this.get<CalendarListResponse>(
+            "/api/calendar/google",
+            Object.keys(queryParams).length > 0 ? queryParams : undefined
+        );
     }
 
     async importGoogleCalendar(request: ImportCalendarRequest): Promise<ImportCalendarResponse> {
         return this.post<ImportCalendarResponse>("/api/calendar/google", request);
+    }
+
+    // User Methods
+    async getUserProfile(): Promise<UserProfileResponse> {
+        return this.get<UserProfileResponse>("/api/user/profile");
     }
 
     // Utility Methods
@@ -188,7 +207,7 @@ class ApiClient {
 }
 
 // Export singleton instance
-export const api = new ApiClient();
+export const api = new ApiClient(env.PUBLIC_API_BASE_URL || "http://localhost:8000");
 
 // Export class for custom instances if needed
 export { ApiClient };

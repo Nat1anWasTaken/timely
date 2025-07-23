@@ -6,11 +6,16 @@
     import { goto } from "$app/navigation";
     import { toast } from "svelte-sonner";
     import type { LoginRequest } from "$lib/types/api";
+    import { createUserDataQuery } from "$lib/globalQueries";
+
+    const userDataQuery = createUserDataQuery();
 
     const loginMutation = createMutation({
         mutationFn: (credentials: LoginRequest) => api.login(credentials),
         onSuccess: () => {
             goto("/");
+            toast.success("Login successful!");
+            $userDataQuery.refetch();
         },
         onError: (error) => {
             console.error("Login failed:", error);

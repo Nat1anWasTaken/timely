@@ -51,6 +51,7 @@
     },
     "dependencies": {
         "@tanstack/svelte-query": "^5.83.0",
+        "@tanstack/svelte-query-devtools": "^5.83.0",
         "calendar-js": "^1.4.4",
         "mode-watcher": "^1.1.0"
     }

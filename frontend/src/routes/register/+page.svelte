@@ -6,6 +6,10 @@
 
     import { api } from "$lib/api";
     import { toast } from "svelte-sonner";
+    import { goto } from "$app/navigation";
+    import { createUserDataQuery } from "$lib/globalQueries";
+
+    const userDataQuery = createUserDataQuery();
 
     const registerMutation = createMutation({
         mutationFn: (data: {
@@ -20,6 +24,11 @@
                 email: data.email,
                 password: data.password
             }),
+        onSuccess: () => {
+            goto("/");
+            toast.success("Registration successful!");
+            $userDataQuery.refetch();
+        },
         onError: (error) => {
             console.error("Registration failed:", error);
             toast.error("Registration failed. Please check your details and try again.", {
