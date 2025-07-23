@@ -55,7 +55,7 @@ type ImportICSResponse struct {
 // @Failure 400 {object} model.ErrorResponse "Bad Request - Invalid request body or ICS data"
 // @Failure 401 {object} model.ErrorResponse "Unauthorized - Authentication required"
 // @Failure 500 {object} model.ErrorResponse "Internal server error"
-// @Router /api/calendar/ics [post]
+// @Router /api/calendars/ics [post]
 func (h *ICSHandler) ImportICS(w http.ResponseWriter, r *http.Request) {
 	// Get user from context (set by JWT middleware)
 	user, ok := middleware.GetUserFromContext(r.Context())

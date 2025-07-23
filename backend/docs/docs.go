@@ -230,7 +230,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/calendar/events": {
+        "/api/calendars/events": {
             "get": {
                 "security": [
                     {
@@ -295,7 +295,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/calendar/google": {
+        "/api/calendars/google": {
             "get": {
                 "security": [
                     {
@@ -416,7 +416,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/calendar/ics": {
+        "/api/calendars/ics": {
             "post": {
                 "security": [
                     {
@@ -486,7 +486,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/user/profile": {
+        "/api/users/profile": {
             "get": {
                 "security": [
                     {

@@ -23,7 +23,7 @@ func UserRouter(r chi.Router) {
 	userHandler := user.NewUserHandler(userService)
 
 	// User routes with JWT middleware
-	r.Route("/user", func(r chi.Router) {
+	r.Route("/users", func(r chi.Router) {
 		// Apply JWT middleware to all user routes
 		r.Use(middleware.JWTMiddleware(zap.L()))
 

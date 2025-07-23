@@ -35,7 +35,7 @@ func NewGoogleCalendarHandler(calendarService *service.CalendarService) *GoogleC
 // @Failure 401 {object} model.ErrorResponse "Unauthorized - Authentication required"
 // @Failure 404 {object} model.ErrorResponse "Not Found - Google token not found"
 // @Failure 500 {object} model.ErrorResponse "Internal server error"
-// @Router /api/calendar/google [get]
+// @Router /api/calendars/google [get]
 func (h *GoogleCalendarHandler) GetCalendars(w http.ResponseWriter, r *http.Request) {
 	// Get user from context (set by JWT middleware)
 	user, ok := middleware.GetUserFromContext(r.Context())
@@ -115,7 +115,7 @@ type ImportCalendarResponse struct {
 // @Failure 404 {object} model.ErrorResponse "Not Found - Google token not found or calendar not found"
 // @Failure 409 {object} model.ErrorResponse "Conflict - Calendar already imported"
 // @Failure 500 {object} model.ErrorResponse "Internal server error"
-// @Router /api/calendar/google [post]
+// @Router /api/calendars/google [post]
 func (h *GoogleCalendarHandler) ImportCalendar(w http.ResponseWriter, r *http.Request) {
 	// Get user from context (set by JWT middleware)
 	user, ok := middleware.GetUserFromContext(r.Context())

@@ -219,7 +219,7 @@
                 }
             }
         },
-        "/api/calendar/events": {
+        "/api/calendars/events": {
             "get": {
                 "security": [
                     {
@@ -284,7 +284,7 @@
                 }
             }
         },
-        "/api/calendar/google": {
+        "/api/calendars/google": {
             "get": {
                 "security": [
                     {
@@ -405,7 +405,7 @@
                 }
             }
         },
-        "/api/calendar/ics": {
+        "/api/calendars/ics": {
             "post": {
                 "security": [
                     {
@@ -475,7 +475,7 @@
                 }
             }
         },
-        "/api/user/profile": {
+        "/api/users/profile": {
             "get": {
                 "security": [
                     {

@@ -28,7 +28,7 @@ func CalendarRouter(r chi.Router) {
 	icsHandler := calendar.NewICSHandler(calendarService)
 
 	// Calendar routes with JWT middleware
-	r.Route("/calendar", func(r chi.Router) {
+	r.Route("/calendars", func(r chi.Router) {
 		// Apply JWT middleware to all calendar routes
 		r.Use(middleware.JWTMiddleware(zap.L()))
 

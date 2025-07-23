@@ -25,7 +25,7 @@ import (
 // @Failure 400 {object} model.ErrorResponse "Bad Request - Invalid query parameters or time range"
 // @Failure 401 {object} model.ErrorResponse "Unauthorized - Authentication required"
 // @Failure 500 {object} model.ErrorResponse "Internal server error"
-// @Router /api/calendar/events [get]
+// @Router /api/calendars/events [get]
 func (h *GoogleCalendarHandler) GetCalendarEvents(w http.ResponseWriter, r *http.Request) {
 	// Get user from context (set by JWT middleware)
 	user, ok := middleware.GetUserFromContext(r.Context())

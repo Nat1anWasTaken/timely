@@ -34,7 +34,7 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 // @Failure 401 {object} model.ErrorResponse "Unauthorized - Authentication required"
 // @Failure 404 {object} model.ErrorResponse "Not Found - User not found"
 // @Failure 500 {object} model.ErrorResponse "Internal server error"
-// @Router /api/user/profile [get]
+// @Router /api/users/profile [get]
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	// Get user from context (set by JWT middleware)
 	user, ok := middleware.GetUserFromContext(r.Context())

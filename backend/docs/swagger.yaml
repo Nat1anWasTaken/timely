@@ -570,7 +570,7 @@ paths:
       summary: User Registration
       tags:
       - Authentication
-  /api/calendar/events:
+  /api/calendars/events:
     get:
       description: Retrieves all events for user's calendars within a specified time
         range (max 3 months)
@@ -613,7 +613,7 @@ paths:
       summary: Get Calendar Events
       tags:
       - Calendar
-  /api/calendar/google:
+  /api/calendars/google:
     get:
       consumes:
       - application/json
@@ -690,7 +690,7 @@ paths:
       summary: Import Google Calendar
       tags:
       - Calendar
-  /api/calendar/ics:
+  /api/calendars/ics:
     post:
       consumes:
       - application/json
@@ -738,7 +738,7 @@ paths:
       summary: Import ICS File
       tags:
       - Calendar
-  /api/user/profile:
+  /api/users/profile:
     get:
       consumes:
       - application/json
