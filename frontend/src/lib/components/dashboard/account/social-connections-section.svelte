@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { Button } from "$lib/components/ui/button";
     import {
         Card,
         CardContent,
@@ -36,7 +35,7 @@
     <CardContent>
         <div class="space-y-3">
             {#if $userDataQuery.data?.user.accounts && $userDataQuery.data.user.accounts.length > 0}
-                {#each $userDataQuery.data.user.accounts as account}
+                {#each $userDataQuery.data.user.accounts as account (account.id)}
                     <SocialConnection
                         icon={providerIcons[account.provider] || Chrome}
                         title={providerNames[account.provider] || account.provider}

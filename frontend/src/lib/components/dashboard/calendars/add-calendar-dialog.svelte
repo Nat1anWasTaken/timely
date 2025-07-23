@@ -23,8 +23,6 @@
     let open = $state(false);
     let selectedProvider: "google" | "ics" | null = $state(null);
 
-
-
     function resetState() {
         selectedProvider = null;
     }
@@ -60,10 +58,7 @@
                     onSuccess={handleSuccess}
                 />
             {:else if selectedProvider === "ics"}
-                <IcsUpload
-                    onBack={() => (selectedProvider = null)}
-                    onSuccess={handleSuccess}
-                />
+                <IcsUpload onBack={() => (selectedProvider = null)} onSuccess={handleSuccess} />
             {/if}
         </div>
     </SheetContent>

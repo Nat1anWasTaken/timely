@@ -1,8 +1,8 @@
 <script lang="ts">
-    import ProfileSection from "$lib/components/dashboard/profile-section.svelte";
-    import PasswordSection from "$lib/components/dashboard/password-section.svelte";
-    import SocialConnectionsSection from "$lib/components/dashboard/social-connections-section.svelte";
-    import DangerZoneSection from "$lib/components/dashboard/danger-zone-section.svelte";
+    import ProfileSection from "$lib/components/dashboard/account/profile-section.svelte";
+    import PasswordSection from "$lib/components/dashboard/account/password-section.svelte";
+    import SocialConnectionsSection from "$lib/components/dashboard/account/social-connections-section.svelte";
+    import DangerZoneSection from "$lib/components/dashboard/account/danger-zone-section.svelte";
 </script>
 
 <div class="w-2xl max-w-[90vw] space-y-6">

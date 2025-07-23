@@ -50,9 +50,11 @@
 
         try {
             const response = await api.importICSFileUpload(icsFile, calendarName || undefined);
-            
+
             if (response.success) {
-                toast.success(`ICS calendar imported successfully! ${response.events_count || 0} events added.`);
+                toast.success(
+                    `ICS calendar imported successfully! ${response.events_count || 0} events added.`
+                );
                 onSuccess();
             } else {
                 toast.error(response.message || "Failed to import ICS file");
@@ -112,7 +114,9 @@
         {#if icsFile}
             <Button class="w-full" onclick={handleImport} disabled={loading}>
                 {#if loading}
-                    <div class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                    <div
+                        class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+                    ></div>
                 {/if}
                 Import Calendar
             </Button>
