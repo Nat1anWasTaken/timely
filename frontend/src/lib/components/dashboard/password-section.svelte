@@ -21,7 +21,7 @@
     <CardContent>
         <div class="flex items-center justify-between">
             <span class="text-sm text-muted-foreground">Password last updated 2 months ago</span>
-            <Button variant="outline" size="sm">Change Password</Button>
+            <Button variant="outline" size="sm" disabled aria-disabled>Change Password</Button>
         </div>
     </CardContent>
 </Card>

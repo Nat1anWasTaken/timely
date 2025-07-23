@@ -6,7 +6,10 @@
         CardHeader,
         CardTitle
     } from "$lib/components/ui/card";
+    import { createUserDataQuery } from "$lib/globalQueries";
     import { User } from "@lucide/svelte";
+
+    let userDataQuery = createUserDataQuery();
 </script>
 
 <Card>
@@ -23,7 +26,7 @@
                 <User class="h-6 w-6" />
             </div>
             <div class="space-y-1">
-                <p class="text-sm font-medium">john.doe@example.com</p>
+                <p class="text-sm font-medium">{$userDataQuery.data?.user.display_name}</p>
                 <p class="text-xs text-muted-foreground">Member since January 2024</p>
             </div>
         </div>
