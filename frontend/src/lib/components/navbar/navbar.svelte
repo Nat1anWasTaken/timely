@@ -11,10 +11,6 @@
     onMount(() => {
         $userDataQuery.refetch();
     });
-
-    $inspect($userDataQuery.isFetching);
-    $inspect($userDataQuery.isLoading);
-    $inspect($userDataQuery.data);
 </script>
 
 <div class="m-4 flex max-h-16">
