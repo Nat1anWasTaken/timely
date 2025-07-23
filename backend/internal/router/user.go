@@ -26,7 +26,7 @@ func UserRouter(r chi.Router) {
 
 	// Initialize handlers
 	userHandler := user.NewUserHandler(userService)
-	userEventsHandler := user.NewUserEventsHandler(calendarService)
+	userEventsHandler := user.NewUserEventsHandler(calendarService, userService)
 
 	// User routes
 	r.Route("/users", func(r chi.Router) {
@@ -37,6 +37,6 @@ func UserRouter(r chi.Router) {
 		})
 
 		// Public user events endpoint (no authentication required)
-		r.Get("/{user_id}/events", userEventsHandler.GetPublicUserEvents)
+		r.Get("/{username}/events", userEventsHandler.GetPublicUserEvents)
 	})
 }

@@ -690,7 +690,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/users/{user_id}/events": {
+        "/api/users/{username}/events": {
             "get": {
                 "description": "Retrieves public calendar events for a specific user within a specified time range (max 3 months). No authentication required.",
                 "produces": [
@@ -703,8 +703,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
-                        "name": "user_id",
+                        "description": "Username",
+                        "name": "username",
                         "in": "path",
                         "required": true
                     },

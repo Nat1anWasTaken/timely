@@ -14,12 +14,14 @@ import (
 
 type UserEventsHandler struct {
 	calendarService *service.CalendarService
+	userService     *service.UserService
 	logger          *zap.Logger
 }
 
-func NewUserEventsHandler(calendarService *service.CalendarService) *UserEventsHandler {
+func NewUserEventsHandler(calendarService *service.CalendarService, userService *service.UserService) *UserEventsHandler {
 	return &UserEventsHandler{
 		calendarService: calendarService,
+		userService:     userService,
 		logger:          zap.L(),
 	}
 }
@@ -29,28 +31,28 @@ func NewUserEventsHandler(calendarService *service.CalendarService) *UserEventsH
 // @Description Retrieves public calendar events for a specific user within a specified time range (max 3 months). No authentication required.
 // @Tags User
 // @Produce json
-// @Param user_id path string true "User ID"
+// @Param username path string true "Username"
 // @Param start_timestamp query string true "Start timestamp in Unix format"
 // @Param end_timestamp query string true "End timestamp in Unix format"
 // @Success 200 {object} model.CalendarEventsResponse "Public events retrieved successfully"
 // @Failure 400 {object} model.ErrorResponse "Bad Request - Invalid parameters or time range"
 // @Failure 404 {object} model.ErrorResponse "Not Found - User not found"
 // @Failure 500 {object} model.ErrorResponse "Internal server error"
-// @Router /api/users/{user_id}/events [get]
+// @Router /api/users/{username}/events [get]
 func (h *UserEventsHandler) GetPublicUserEvents(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from path parameter
-	userIDStr := r.PathValue("user_id")
-	if userIDStr == "" {
-		h.logger.Error("User ID not provided in path")
-		sendEventsErrorResponse(w, "User ID is required", "missing_user_id", http.StatusBadRequest)
+	username := r.PathValue("username")
+	if username == "" {
+		h.logger.Error("Username not provided in path")
+		sendEventsErrorResponse(w, "Username is required", "missing_username", http.StatusBadRequest)
 		return
 	}
 
-	// Parse user ID
-	userID, err := strconv.ParseUint(userIDStr, 10, 64)
+	// Get user by username
+	user, err := h.userService.GetUserByUsername(username)
 	if err != nil {
-		h.logger.Error("Failed to parse user ID", zap.Error(err), zap.String("user_id", userIDStr))
-		sendEventsErrorResponse(w, "Invalid user ID format", "invalid_user_id", http.StatusBadRequest)
+		h.logger.Error("Failed to get user by username", zap.Error(err), zap.String("username", username))
+		sendEventsErrorResponse(w, "User not found", "user_not_found", http.StatusNotFound)
 		return
 	}
 
@@ -90,14 +92,14 @@ func (h *UserEventsHandler) GetPublicUserEvents(w http.ResponseWriter, r *http.R
 	}
 
 	h.logger.Info("Fetching public calendar events for user",
-		zap.Uint64("user_id", userID),
+		zap.Uint64("user_id", user.ID),
 		zap.Time("start_time", startTime),
 		zap.Time("end_time", endTime))
 
 	// Get public calendar events from service
-	calendarsWithEvents, err := h.calendarService.GetPublicUserCalendarEvents(userID, startTime, endTime)
+	calendarsWithEvents, err := h.calendarService.GetPublicUserCalendarEvents(user.ID, startTime, endTime)
 	if err != nil {
-		h.logger.Error("Failed to get public calendar events", zap.Error(err), zap.Uint64("user_id", userID))
+		h.logger.Error("Failed to get public calendar events", zap.Error(err), zap.Uint64("user_id", user.ID))
 
 		// Handle specific error cases
 		switch {
@@ -135,7 +137,7 @@ func (h *UserEventsHandler) GetPublicUserEvents(w http.ResponseWriter, r *http.R
 	}
 
 	h.logger.Info("Successfully retrieved public calendar events",
-		zap.Uint64("user_id", userID),
+		zap.Uint64("user_id", user.ID),
 		zap.Int("calendar_count", len(calendarsWithEvents)),
 		zap.Int("total_events", totalEvents))
 }

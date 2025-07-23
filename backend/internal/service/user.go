@@ -2,6 +2,9 @@ package service
 
 import (
 	"errors"
+	"fmt"
+	"math/rand"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -137,6 +140,11 @@ func (s *UserService) GetUserByID(id uint64) (*model.User, error) {
 	return s.userRepo.FindByID(id)
 }
 
+// GetUserByUsername retrieves a user by username
+func (s *UserService) GetUserByUsername(username string) (*model.User, error) {
+	return s.userRepo.FindByUsername(username)
+}
+
 // GetUserWithAccountsByID retrieves a user by ID with associated accounts
 func (s *UserService) GetUserWithAccountsByID(id uint64) (*model.User, error) {
 	user, err := s.userRepo.FindByID(id)
@@ -247,13 +255,61 @@ func (s *UserService) verifyPassword(password, hash string) bool {
 
 // generateUniqueUsername generates a unique username from the given name
 func (s *UserService) generateUniqueUsername(name string) string {
-	baseUsername := name
-	// TODO: if username exists, append a number
-	// In a real application, you might want more sophisticated logic
+	// First, sanitize the input name
+	sanitized := s.sanitizeUsernameInput(name)
 
-	// For now, just use the name and let GORM handle uniqueness constraints
-	// If there's a conflict, it will error and we can handle it appropriately
-	return baseUsername
+	// If sanitized name is empty or too short, generate a random username
+	if len(sanitized) < 3 {
+		return s.generateRandomUsername()
+	}
+
+	// Try the sanitized name first
+	baseUsername := sanitized
+	if exists, err := s.userRepo.ExistsByUsername(baseUsername); err == nil && !exists {
+		return baseUsername
+	}
+
+	// If username exists, try appending random numbers (up to 10 attempts)
+	for i := 0; i < 10; i++ {
+		randomSuffix := rand.Intn(9999) + 1 // Generate 1-9999
+		candidateUsername := fmt.Sprintf("%s%d", baseUsername, randomSuffix)
+
+		if exists, err := s.userRepo.ExistsByUsername(candidateUsername); err == nil && !exists {
+			return candidateUsername
+		}
+	}
+
+	// If all attempts failed, generate a completely random username
+	return s.generateRandomUsername()
+}
+
+// sanitizeUsernameInput converts input to valid username format
+func (s *UserService) sanitizeUsernameInput(input string) string {
+	if input == "" {
+		return ""
+	}
+
+	// Convert to lowercase
+	input = strings.ToLower(input)
+
+	// Use the SanitizeUsername utility function
+	return utils.SanitizeUsername(input)
+}
+
+// generateRandomUsername generates a random username in the format "user" + random number
+func (s *UserService) generateRandomUsername() string {
+	for i := 0; i < 10; i++ {
+		randomNum := rand.Intn(999999) + 100000 // Generate 6-digit number
+		username := fmt.Sprintf("user%d", randomNum)
+
+		if exists, err := s.userRepo.ExistsByUsername(username); err == nil && !exists {
+			return username
+		}
+	}
+
+	// Fallback: use timestamp-based username
+	timestamp := time.Now().Unix()
+	return fmt.Sprintf("user%d", timestamp)
 }
 
 // UpdateGoogleAccountTokens updates the OAuth tokens for a Google account
