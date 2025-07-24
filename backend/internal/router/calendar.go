@@ -35,7 +35,7 @@ func CalendarRouter(r chi.Router) {
 		r.Get("/", calendarHandler.GetImportedCalendars)
 
 		// Individual calendar operations (update/delete)
-		r.Put("/{id}", calendarHandler.UpdateCalendar)
+		r.Patch("/{id}", calendarHandler.UpdateCalendar)
 		r.Delete("/{id}", calendarHandler.DeleteCalendar)
 
 		// Google Calendar endpoints
