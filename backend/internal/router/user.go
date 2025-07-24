@@ -36,7 +36,8 @@ func UserRouter(r chi.Router) {
 			r.Get("/me", userHandler.GetProfile)
 		})
 
-		// Public user events endpoint (no authentication required)
+		// Public endpoints (no authentication required)
+		r.Get("/{username}", userHandler.GetPublicProfile)
 		r.Get("/{username}/events", userEventsHandler.GetPublicUserEvents)
 	})
 }

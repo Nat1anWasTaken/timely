@@ -132,7 +132,7 @@ definitions:
   model.CalendarEvent:
     description: Calendar event
     properties:
-      allDay:
+      all_day:
         description: True if it's an all-day event
         type: boolean
       calendar_id:
@@ -423,6 +423,42 @@ definitions:
     required:
     - email
     - password
+    type: object
+  model.PublicUserProfile:
+    description: Public user profile information
+    properties:
+      created_at:
+        description: Account creation timestamp
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      display_name:
+        description: User's display name
+        example: John Doe
+        type: string
+      id:
+        description: Unique user identifier
+        example: "123456789"
+        type: string
+      picture:
+        description: Profile picture URL
+        example: https://example.com/avatar.jpg
+        type: string
+      username:
+        description: Username
+        example: johndoe
+        type: string
+    type: object
+  model.PublicUserProfileResponse:
+    description: Public user profile response
+    properties:
+      message:
+        example: Public user profile retrieved successfully
+        type: string
+      success:
+        example: true
+        type: boolean
+      user:
+        $ref: '#/definitions/model.PublicUserProfile'
     type: object
   model.RegisterRequest:
     description: Registration request payload
@@ -922,6 +958,36 @@ paths:
       summary: Import ICS File
       tags:
       - Calendar
+  /api/users/{username}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves public profile information for a specific user by username.
+        No authentication required.
+      parameters:
+      - description: Username
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Public user profile retrieved successfully
+          schema:
+            $ref: '#/definitions/model.PublicUserProfileResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Get Public User Profile
+      tags:
+      - User
   /api/users/{username}/events:
     get:
       description: Retrieves public calendar events for a specific user within a specified

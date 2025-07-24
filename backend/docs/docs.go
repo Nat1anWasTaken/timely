@@ -690,6 +690,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/users/{username}": {
+            "get": {
+                "description": "Retrieves public profile information for a specific user by username. No authentication required.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get Public User Profile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Public user profile retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.PublicUserProfileResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/users/{username}/events": {
             "get": {
                 "description": "Retrieves public calendar events for a specific user within a specified time range (max 3 months). No authentication required.",
@@ -948,7 +992,7 @@ const docTemplate = `{
             "description": "Calendar event",
             "type": "object",
             "properties": {
-                "allDay": {
+                "all_day": {
                     "description": "True if it's an all-day event",
                     "type": "boolean"
                 },
@@ -1354,6 +1398,54 @@ const docTemplate = `{
                     "type": "string",
                     "minLength": 6,
                     "example": "password123"
+                }
+            }
+        },
+        "model.PublicUserProfile": {
+            "description": "Public user profile information",
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "Account creation timestamp",
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "display_name": {
+                    "description": "User's display name",
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "id": {
+                    "description": "Unique user identifier",
+                    "type": "string",
+                    "example": "123456789"
+                },
+                "picture": {
+                    "description": "Profile picture URL",
+                    "type": "string",
+                    "example": "https://example.com/avatar.jpg"
+                },
+                "username": {
+                    "description": "Username",
+                    "type": "string",
+                    "example": "johndoe"
+                }
+            }
+        },
+        "model.PublicUserProfileResponse": {
+            "description": "Public user profile response",
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Public user profile retrieved successfully"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "user": {
+                    "$ref": "#/definitions/model.PublicUserProfile"
                 }
             }
         },

@@ -55,3 +55,21 @@ type UserProfileResponse struct {
 	Message string `json:"message" example:"User profile retrieved successfully"`
 	User    *User  `json:"user"`
 }
+
+// PublicUserProfile represents public user information
+// @Description Public user profile information
+type PublicUserProfile struct {
+	ID          uint64    `json:"id,string" example:"123456789"`                        // Unique user identifier
+	Username    string    `json:"username" example:"johndoe"`                           // Username
+	DisplayName string    `json:"display_name" example:"John Doe"`                      // User's display name
+	Picture     *string   `json:"picture" example:"https://example.com/avatar.jpg"`     // Profile picture URL
+	CreatedAt   time.Time `json:"created_at" example:"2024-01-01T00:00:00Z"`            // Account creation timestamp
+}
+
+// PublicUserProfileResponse represents the response for public user profile endpoint
+// @Description Public user profile response
+type PublicUserProfileResponse struct {
+	Success bool               `json:"success" example:"true"`
+	Message string             `json:"message" example:"Public user profile retrieved successfully"`
+	User    *PublicUserProfile `json:"user"`
+}
