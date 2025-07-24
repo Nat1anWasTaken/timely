@@ -25,7 +25,7 @@ func SetupRouter() *chi.Mux {
 	r.Use(middleware.Logger)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   strings.Split(os.Getenv("ALLOWED_ORIGINS"), ","),
-		AllowedMethods:   []string{"GET", "PUT", "POST", "DELETE", "HEAD", "OPTION"},
+		AllowedMethods:   []string{"GET", "PUT", "POST", "PATCH", "DELETE", "HEAD", "OPTION"},
 		AllowedHeaders:   []string{"User-Agent", "Content-Type", "Accept", "Accept-Encoding", "Accept-Language", "Cache-Control", "Connection", "DNT", "Host", "Origin", "Pragma", "Referer"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
