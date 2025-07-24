@@ -894,6 +894,9 @@ const docTemplate = `{
                     "type": "string",
                     "example": "0"
                 },
+                "last_full_sync": {
+                    "type": "string"
+                },
                 "source": {
                     "$ref": "#/definitions/model.CalendarSource"
                 },
@@ -901,6 +904,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "summary": {
+                    "type": "string"
+                },
+                "sync_status": {
+                    "$ref": "#/definitions/model.CalendarSyncStatus"
+                },
+                "sync_token": {
                     "type": "string"
                 },
                 "synced_at": {
@@ -1054,11 +1063,24 @@ const docTemplate = `{
             "type": "string",
             "enum": [
                 "google",
-                "isc"
+                "ics"
             ],
             "x-enum-varnames": [
                 "SourceGoogle",
-                "SourceISC"
+                "SourceICS"
+            ]
+        },
+        "model.CalendarSyncStatus": {
+            "type": "string",
+            "enum": [
+                "never_synced",
+                "full_sync_complete",
+                "incremental_sync"
+            ],
+            "x-enum-varnames": [
+                "CalendarSyncStatusNeverSynced",
+                "CalendarSyncStatusFullSyncComplete",
+                "CalendarSyncStatusIncrementalSync"
             ]
         },
         "model.CalendarUpdateRequest": {
@@ -1149,6 +1171,9 @@ const docTemplate = `{
                     "type": "string",
                     "example": "0"
                 },
+                "last_full_sync": {
+                    "type": "string"
+                },
                 "source": {
                     "$ref": "#/definitions/model.CalendarSource"
                 },
@@ -1156,6 +1181,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "summary": {
+                    "type": "string"
+                },
+                "sync_status": {
+                    "$ref": "#/definitions/model.CalendarSyncStatus"
+                },
+                "sync_token": {
                     "type": "string"
                 },
                 "synced_at": {

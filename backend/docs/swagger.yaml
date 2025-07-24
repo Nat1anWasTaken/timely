@@ -95,11 +95,17 @@ definitions:
       id:
         example: "0"
         type: string
+      last_full_sync:
+        type: string
       source:
         $ref: '#/definitions/model.CalendarSource'
       source_id:
         type: string
       summary:
+        type: string
+      sync_status:
+        $ref: '#/definitions/model.CalendarSyncStatus'
+      sync_token:
         type: string
       synced_at:
         type: string
@@ -208,11 +214,21 @@ definitions:
   model.CalendarSource:
     enum:
     - google
-    - isc
+    - ics
     type: string
     x-enum-varnames:
     - SourceGoogle
-    - SourceISC
+    - SourceICS
+  model.CalendarSyncStatus:
+    enum:
+    - never_synced
+    - full_sync_complete
+    - incremental_sync
+    type: string
+    x-enum-varnames:
+    - CalendarSyncStatusNeverSynced
+    - CalendarSyncStatusFullSyncComplete
+    - CalendarSyncStatusIncrementalSync
   model.CalendarUpdateRequest:
     description: Calendar update request
     properties:
@@ -274,11 +290,17 @@ definitions:
       id:
         example: "0"
         type: string
+      last_full_sync:
+        type: string
       source:
         $ref: '#/definitions/model.CalendarSource'
       source_id:
         type: string
       summary:
+        type: string
+      sync_status:
+        $ref: '#/definitions/model.CalendarSyncStatus'
+      sync_token:
         type: string
       synced_at:
         type: string

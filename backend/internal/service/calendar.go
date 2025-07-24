@@ -20,18 +20,107 @@ import (
 )
 
 type CalendarService struct {
-	userRepo     *repository.UserRepository
+	userRepo         *repository.UserRepository
+	calendarRepo     *repository.CalendarRepository
+	oauthConfig      *config.OAuthConfig
+	syncTokenManager *SyncTokenManager
+	logger           *zap.Logger
+}
+
+// SyncTokenManager handles sync token operations for efficient incremental sync
+type SyncTokenManager struct {
 	calendarRepo *repository.CalendarRepository
-	oauthConfig  *config.OAuthConfig
 	logger       *zap.Logger
+}
+
+func NewSyncTokenManager(calendarRepo *repository.CalendarRepository) *SyncTokenManager {
+	return &SyncTokenManager{
+		calendarRepo: calendarRepo,
+		logger:       zap.L(),
+	}
+}
+
+// GetSyncToken retrieves the sync token for a calendar
+func (stm *SyncTokenManager) GetSyncToken(calendarID uint64) (string, error) {
+	calendar, err := stm.calendarRepo.FindByID(fmt.Sprintf("%d", calendarID))
+	if err != nil {
+		return "", fmt.Errorf("failed to find calendar: %w", err)
+	}
+	
+	if calendar.SyncToken == nil {
+		return "", nil
+	}
+	
+	return *calendar.SyncToken, nil
+}
+
+// StoreSyncToken stores a sync token for a calendar
+func (stm *SyncTokenManager) StoreSyncToken(calendarID uint64, syncToken string) error {
+	return stm.calendarRepo.UpdateSyncToken(calendarID, syncToken)
+}
+
+// ClearSyncToken clears the sync token for a calendar (forcing full sync next time)
+func (stm *SyncTokenManager) ClearSyncToken(calendarID uint64) error {
+	return stm.calendarRepo.UpdateSyncToken(calendarID, "")
+}
+
+// ShouldPerformFullSync determines if a full sync is needed
+func (stm *SyncTokenManager) ShouldPerformFullSync(calendar *model.Calendar, forceSync bool) bool {
+	// Force full sync if explicitly requested
+	if forceSync {
+		return true
+	}
+	
+	// Perform full sync if calendar has never been synced
+	if calendar.SyncStatus == model.CalendarSyncStatusNeverSynced {
+		return true
+	}
+	
+	// Perform full sync if no sync token exists
+	if calendar.SyncToken == nil || *calendar.SyncToken == "" {
+		return true
+	}
+	
+	// Perform full sync if last full sync was more than 24 hours ago
+	if calendar.LastFullSync == nil || time.Since(*calendar.LastFullSync) > 24*time.Hour {
+		stm.logger.Info("Performing full sync due to 24-hour threshold",
+			zap.Uint64("calendar_id", calendar.ID),
+			zap.Time("last_full_sync", func() time.Time {
+				if calendar.LastFullSync != nil {
+					return *calendar.LastFullSync
+				}
+				return time.Time{}
+			}()))
+		return true
+	}
+	
+	return false
+}
+
+// UpdateSyncMetadata updates sync-related metadata after a successful sync
+func (stm *SyncTokenManager) UpdateSyncMetadata(calendarID uint64, syncToken string, isFullSync bool) error {
+	now := time.Now()
+	var status model.CalendarSyncStatus
+	var lastFullSync *time.Time
+	
+	if isFullSync {
+		status = model.CalendarSyncStatusFullSyncComplete
+		lastFullSync = &now
+	} else {
+		status = model.CalendarSyncStatusIncrementalSync
+		// Don't update lastFullSync for incremental syncs
+	}
+	
+	return stm.calendarRepo.UpdateSyncMetadata(calendarID, status, syncToken, lastFullSync, now)
 }
 
 func NewCalendarService(userRepo *repository.UserRepository, calendarRepo *repository.CalendarRepository, oauthConfig *config.OAuthConfig) *CalendarService {
 	return &CalendarService{
-		userRepo:     userRepo,
-		calendarRepo: calendarRepo,
-		oauthConfig:  oauthConfig,
-		logger:       zap.L(),
+		userRepo:         userRepo,
+		calendarRepo:     calendarRepo,
+		oauthConfig:      oauthConfig,
+		syncTokenManager: NewSyncTokenManager(calendarRepo),
+		logger:           zap.L(),
 	}
 }
 
@@ -120,7 +209,7 @@ func (s *CalendarService) SyncIfNeeded(userID uint64, forceSync bool) (bool, err
 
 	if !needsSync {
 		for _, calendar := range localCalendars {
-			if time.Since(calendar.SyncedAt) > 5*time.Minute {
+			if time.Since(calendar.SyncedAt) > 1*time.Minute {
 				needsSync = true
 				break
 			}
@@ -169,7 +258,7 @@ func (s *CalendarService) SyncIfNeeded(userID uint64, forceSync bool) (bool, err
 
 	for _, calendar := range localCalendars {
 		if calendar.SourceID != nil {
-			shouldSyncCalendar := forceSync || time.Since(calendar.SyncedAt) > 5*time.Minute
+			shouldSyncCalendar := forceSync || time.Since(calendar.SyncedAt) > 1*time.Minute
 			if shouldSyncCalendar {
 				syncAttempts++
 				if err := s.SyncCalendarEvents(userID, *calendar.SourceID); err != nil {
@@ -389,6 +478,9 @@ func (s *CalendarService) ImportCalendar(userID uint64, calendarID string) (*mod
 		Description: &googleCalendar.Description,
 		Visibility:  model.CalendarVisibilityPrivate,
 		SyncedAt:    time.Now(),
+		SyncStatus:  model.CalendarSyncStatusNeverSynced,
+		SyncToken:   nil,
+		LastFullSync: nil,
 	}
 
 	// Save calendar to database
@@ -501,17 +593,22 @@ func (s *CalendarService) fetchCalendarFromGoogle(accessToken, calendarID string
 	return nil, fmt.Errorf("calendar not found in list")
 }
 
-// fetchEventsFromGoogle calls the Google Calendar API to get events for a specific calendar
+// fetchEventsFromGoogle calls the Google Calendar API to get events for a specific calendar (full sync)
 func (s *CalendarService) fetchEventsFromGoogle(accessToken, calendarID string) ([]*model.GoogleCalendarEvent, error) {
+	response, err := s.fetchEventsFromGoogleWithResponse(accessToken, calendarID, "", false)
+	if err != nil {
+		return nil, err
+	}
+	return response.Items, nil
+}
+
+
+// fetchEventsFromGoogleWithResponse calls the Google Calendar API and returns the full response including sync tokens
+func (s *CalendarService) fetchEventsFromGoogleWithResponse(accessToken, calendarID, syncToken string, isIncrementalSync bool) (*model.GoogleCalendarEventsResponse, error) {
 	// Create HTTP client with OAuth2 transport
 	ctx := context.Background()
 	oauthToken := &oauth2.Token{AccessToken: accessToken}
 	client := s.oauthConfig.Google.Client(ctx, oauthToken)
-
-	// Calculate time range (last 30 days to next 365 days)
-	now := time.Now()
-	timeMin := now.AddDate(0, 0, -30).Format(time.RFC3339)
-	timeMax := now.AddDate(1, 0, 0).Format(time.RFC3339)
 
 	// Call Google Calendar API events endpoint
 	url := fmt.Sprintf("https://www.googleapis.com/calendar/v3/calendars/%s/events", calendarID)
@@ -522,10 +619,23 @@ func (s *CalendarService) fetchEventsFromGoogle(accessToken, calendarID string) 
 
 	// Add query parameters
 	q := req.URL.Query()
-	q.Add("timeMin", timeMin)
-	q.Add("timeMax", timeMax)
-	q.Add("singleEvents", "true")
-	q.Add("orderBy", "startTime")
+	
+	if isIncrementalSync && syncToken != "" {
+		// For incremental sync, use sync token
+		q.Add("syncToken", syncToken)
+	} else {
+		// For full sync, use time range
+		now := time.Now()
+		timeMin := now.AddDate(0, 0, -30).Format(time.RFC3339)
+		timeMax := now.AddDate(1, 0, 0).Format(time.RFC3339)
+		q.Add("timeMin", timeMin)
+		q.Add("timeMax", timeMax)
+		q.Add("singleEvents", "true")
+		q.Add("orderBy", "startTime")
+	}
+	
+	// CRITICAL: Include deleted events in response for proper sync
+	q.Add("showDeleted", "true")
 	q.Add("maxResults", "2500") // Maximum allowed by Google
 	req.URL.RawQuery = q.Encode()
 
@@ -546,61 +656,276 @@ func (s *CalendarService) fetchEventsFromGoogle(accessToken, calendarID string) 
 		return nil, fmt.Errorf("failed to decode Google Calendar API response: %w", err)
 	}
 
-	return eventsResponse.Items, nil
+	return &eventsResponse, nil
 }
 
-// fetchEventsFromGoogleWithRetry fetches events with retry logic for authentication failures
-func (s *CalendarService) fetchEventsFromGoogleWithRetry(accessToken, calendarID string, userID uint64) ([]*model.GoogleCalendarEvent, error) {
-	// First attempt
-	events, err := s.fetchEventsFromGoogle(accessToken, calendarID)
-	if err == nil {
-		return events, nil
+// fetchAllEventsWithSyncToken fetches all events using sync token, handling pagination
+func (s *CalendarService) fetchAllEventsWithSyncToken(accessToken, calendarID, syncToken string) (*model.GoogleCalendarEventsResponse, error) {
+	var allEvents []*model.GoogleCalendarEvent
+	var nextSyncToken string
+	pageToken := ""
+	
+	for {
+		response, err := s.fetchEventsPageWithSyncToken(accessToken, calendarID, syncToken, pageToken)
+		if err != nil {
+			return nil, err
+		}
+		
+		// Accumulate events
+		allEvents = append(allEvents, response.Items...)
+		
+		// Store the sync token (only present on the last page)
+		if response.NextSyncToken != "" {
+			nextSyncToken = response.NextSyncToken
+		}
+		
+		// Check if there are more pages
+		if response.NextPageToken == "" {
+			break
+		}
+		
+		pageToken = response.NextPageToken
 	}
+	
+	// Return consolidated response
+	return &model.GoogleCalendarEventsResponse{
+		Kind:          "calendar#events",
+		Items:         allEvents,
+		NextSyncToken: nextSyncToken,
+	}, nil
+}
 
-	// Check if it's an authentication error (401)
-	if !s.isAuthError(err) {
-		return nil, err // Not an auth error, return original error
-	}
+// fetchEventsPageWithSyncToken fetches a single page of events with sync token
+func (s *CalendarService) fetchEventsPageWithSyncToken(accessToken, calendarID, syncToken, pageToken string) (*model.GoogleCalendarEventsResponse, error) {
+	// Create HTTP client with OAuth2 transport
+	ctx := context.Background()
+	oauthToken := &oauth2.Token{AccessToken: accessToken}
+	client := s.oauthConfig.Google.Client(ctx, oauthToken)
 
-	s.logger.Warn("Authentication error detected, attempting token refresh and retry",
-		zap.Error(err),
-		zap.Uint64("user_id", userID),
-		zap.String("calendar_id", calendarID))
-
-	// Get fresh account info and try to refresh token
-	account, err := s.userRepo.FindGoogleAccountByUserID(userID)
+	// Call Google Calendar API events endpoint
+	url := fmt.Sprintf("https://www.googleapis.com/calendar/v3/calendars/%s/events", calendarID)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get account for retry: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Force token refresh
-	if err := s.forceRefreshToken(account); err != nil {
-		return nil, fmt.Errorf("failed to force refresh token: %w", err)
+	// Add query parameters
+	q := req.URL.Query()
+	
+	if syncToken != "" {
+		q.Add("syncToken", syncToken)
 	}
+	
+	if pageToken != "" {
+		q.Add("pageToken", pageToken)
+	}
+	
+	// CRITICAL: Include deleted events in response for proper sync
+	q.Add("showDeleted", "true")
+	q.Add("maxResults", "2500") // Maximum allowed by Google
+	req.URL.RawQuery = q.Encode()
 
-	// Retry with new token
-	s.logger.Info("Retrying event fetch with refreshed token",
-		zap.Uint64("user_id", userID),
-		zap.String("calendar_id", calendarID))
-
-	events, err = s.fetchEventsFromGoogle(*account.AccessToken, calendarID)
+	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("retry failed: %w", err)
+		return nil, fmt.Errorf("failed to call Google Calendar API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("google Calendar API error: status %d, body: %s", resp.StatusCode, string(body))
 	}
 
-	return events, nil
+	// Parse response
+	var eventsResponse model.GoogleCalendarEventsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&eventsResponse); err != nil {
+		return nil, fmt.Errorf("failed to decode Google Calendar API response: %w", err)
+	}
+
+	return &eventsResponse, nil
 }
 
-// isAuthError checks if an error is an authentication error
-func (s *CalendarService) isAuthError(err error) bool {
-	if err == nil {
-		return false
-	}
-	errStr := err.Error()
-	return strings.Contains(errStr, "status 401") ||
-		strings.Contains(errStr, "UNAUTHENTICATED") ||
-		strings.Contains(errStr, "Invalid Credentials")
+// isEventDeleted checks if a Google Calendar event is marked as deleted
+func (s *CalendarService) isEventDeleted(googleEvent *model.GoogleCalendarEvent) bool {
+	// Google Calendar API returns deleted events with status "cancelled"
+	// Also check for empty/minimal events which can indicate deletion
+	isDeleted := googleEvent.Status == "cancelled"
+	
+	s.logger.Debug("Checking event deletion status",
+		zap.String("event_id", googleEvent.ID),
+		zap.String("status", googleEvent.Status),
+		zap.String("summary", googleEvent.Summary),
+		zap.Bool("is_deleted", isDeleted))
+	
+	return isDeleted
 }
+
+// processSyncResponse processes the sync response and categorizes events for CRUD operations
+func (s *CalendarService) processSyncResponse(response *model.GoogleCalendarEventsResponse, calendarID uint64) (*SyncEventChanges, error) {
+	s.logger.Info("Processing sync response",
+		zap.Uint64("calendar_id", calendarID),
+		zap.Int("total_events_from_google", len(response.Items)),
+		zap.String("next_sync_token", func() string {
+			if len(response.NextSyncToken) > 20 {
+				return response.NextSyncToken[:20] + "..."
+			}
+			return response.NextSyncToken
+		}()))
+
+	changes := &SyncEventChanges{
+		ToCreate: []*model.CalendarEvent{},
+		ToUpdate: []*model.CalendarEvent{},
+		ToDelete: []string{},
+	}
+	
+	// Get existing events for comparison
+	existingEvents, err := s.calendarRepo.FindEventsByCalendarID(calendarID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get existing events: %w", err)
+	}
+	
+	// Create a map of existing events by source ID for efficient lookup
+	existingEventMap := make(map[string]*model.CalendarEvent)
+	for _, event := range existingEvents {
+		existingEventMap[event.SourceID] = event
+	}
+	
+	// Process each event from Google Calendar
+	for _, googleEvent := range response.Items {
+		if s.isEventDeleted(googleEvent) {
+			// Event is deleted - add to delete list if it exists locally
+			if existingEvent, exists := existingEventMap[googleEvent.ID]; exists {
+				changes.ToDelete = append(changes.ToDelete, existingEvent.SourceID)
+				s.logger.Info("Event marked for deletion - found locally",
+					zap.String("event_id", googleEvent.ID),
+					zap.String("event_title", googleEvent.Summary),
+					zap.String("status", googleEvent.Status),
+					zap.Uint64("calendar_id", calendarID))
+			} else {
+				s.logger.Info("Deleted event not found locally - skipping",
+					zap.String("event_id", googleEvent.ID),
+					zap.String("event_title", googleEvent.Summary),
+					zap.String("status", googleEvent.Status),
+					zap.Uint64("calendar_id", calendarID))
+			}
+			continue
+		}
+		
+		// Skip events without summary (some system events)
+		if googleEvent.Summary == "" {
+			continue
+		}
+		
+		// Convert Google event to our format
+		event, err := s.convertGoogleEventToCalendarEvent(googleEvent, calendarID)
+		if err != nil {
+			s.logger.Error("Failed to convert Google event",
+				zap.Error(err),
+				zap.String("event_id", googleEvent.ID))
+			continue
+		}
+		
+		// Check if event exists locally
+		if existingEvent, exists := existingEventMap[googleEvent.ID]; exists {
+			// Update existing event
+			event.ID = existingEvent.ID // Preserve local ID
+			changes.ToUpdate = append(changes.ToUpdate, event)
+		} else {
+			// Create new event
+			changes.ToCreate = append(changes.ToCreate, event)
+		}
+	}
+	
+	// Log sync operation summary
+	s.logger.Info("Sync response processing completed",
+		zap.Uint64("calendar_id", calendarID),
+		zap.Int("existing_events_count", len(existingEventMap)),
+		zap.Int("events_to_create", len(changes.ToCreate)),
+		zap.Int("events_to_update", len(changes.ToUpdate)),
+		zap.Int("events_to_delete", len(changes.ToDelete)))
+	
+	return changes, nil
+}
+
+// SyncEventChanges represents the changes to apply during sync
+type SyncEventChanges struct {
+	ToCreate []*model.CalendarEvent
+	ToUpdate []*model.CalendarEvent
+	ToDelete []string // Source IDs of events to delete
+}
+
+// applySyncChanges applies the sync changes to the database
+func (s *CalendarService) applySyncChanges(changes *SyncEventChanges, calendarID uint64) error {
+	// Create new events
+	if len(changes.ToCreate) > 0 {
+		if err := s.calendarRepo.CreateEvents(changes.ToCreate); err != nil {
+			s.logger.Error("Failed to create new events",
+				zap.Error(err),
+				zap.Int("event_count", len(changes.ToCreate)),
+				zap.Uint64("calendar_id", calendarID))
+			return fmt.Errorf("failed to create new events: %w", err)
+		}
+		s.logger.Info("Created new events",
+			zap.Int("event_count", len(changes.ToCreate)),
+			zap.Uint64("calendar_id", calendarID))
+	}
+
+	// Update existing events
+	if len(changes.ToUpdate) > 0 {
+		if err := s.calendarRepo.UpdateEvents(changes.ToUpdate); err != nil {
+			s.logger.Error("Failed to update existing events",
+				zap.Error(err),
+				zap.Int("event_count", len(changes.ToUpdate)),
+				zap.Uint64("calendar_id", calendarID))
+			return fmt.Errorf("failed to update existing events: %w", err)
+		}
+		s.logger.Info("Updated existing events",
+			zap.Int("event_count", len(changes.ToUpdate)),
+			zap.Uint64("calendar_id", calendarID))
+	}
+
+	// Delete events
+	if len(changes.ToDelete) > 0 {
+		deletionErrors := []string{}
+		successfulDeletions := 0
+		
+		for _, sourceID := range changes.ToDelete {
+			s.logger.Info("Attempting to delete event",
+				zap.String("source_id", sourceID),
+				zap.Uint64("calendar_id", calendarID))
+				
+			if err := s.calendarRepo.DeleteEventsBySourceID(sourceID); err != nil {
+				deletionErrors = append(deletionErrors, fmt.Sprintf("sourceID:%s error:%v", sourceID, err))
+				s.logger.Error("Failed to delete event",
+					zap.Error(err),
+					zap.String("source_id", sourceID),
+					zap.Uint64("calendar_id", calendarID))
+			} else {
+				successfulDeletions++
+				s.logger.Info("Successfully deleted event",
+					zap.String("source_id", sourceID),
+					zap.Uint64("calendar_id", calendarID))
+			}
+		}
+		
+		s.logger.Info("Event deletion summary",
+			zap.Int("attempted_deletions", len(changes.ToDelete)),
+			zap.Int("successful_deletions", successfulDeletions),
+			zap.Int("failed_deletions", len(deletionErrors)),
+			zap.Uint64("calendar_id", calendarID))
+			
+		// Log errors if any occurred, but don't fail the entire sync
+		if len(deletionErrors) > 0 {
+			s.logger.Warn("Some event deletions failed",
+				zap.Strings("deletion_errors", deletionErrors),
+				zap.Uint64("calendar_id", calendarID))
+		}
+	}
+
+	return nil
+}
+
+
 
 // forceRefreshToken forces a token refresh regardless of expiry time
 func (s *CalendarService) forceRefreshToken(account *model.Account) error {
@@ -806,11 +1131,17 @@ func (s *CalendarService) FindCalendarBySourceID(sourceID string) (*model.Calend
 	return calendar, nil
 }
 
-// SyncCalendarEvents synchronizes events for a specific calendar
+// SyncCalendarEvents synchronizes events for a specific calendar using Google's best practices
 func (s *CalendarService) SyncCalendarEvents(userID uint64, calendarID string) error {
+	return s.SyncCalendarEventsWithForce(userID, calendarID, false)
+}
+
+// SyncCalendarEventsWithForce synchronizes events for a specific calendar with optional force sync
+func (s *CalendarService) SyncCalendarEventsWithForce(userID uint64, calendarID string, forceSync bool) error {
 	s.logger.Info("Starting calendar event sync",
 		zap.Uint64("user_id", userID),
-		zap.String("calendar_id", calendarID))
+		zap.String("calendar_id", calendarID),
+		zap.Bool("force_sync", forceSync))
 
 	// Get user's Google account
 	account, err := s.userRepo.FindGoogleAccountByUserID(userID)
@@ -828,98 +1159,142 @@ func (s *CalendarService) SyncCalendarEvents(userID uint64, calendarID string) e
 		return fmt.Errorf("failed to refresh token: %w", err)
 	}
 
-	// Fetch latest events from Google Calendar API with retry on auth failure
-	googleEvents, err := s.fetchEventsFromGoogleWithRetry(*account.AccessToken, calendarID, userID)
-	if err != nil {
-		return fmt.Errorf("failed to fetch events from Google: %w", err)
-	}
-
 	// Get local calendar
 	localCalendar, err := s.calendarRepo.FindBySourceID(calendarID)
 	if err != nil {
 		return fmt.Errorf("failed to find local calendar: %w", err)
 	}
 
-	// Get existing events for comparison
-	existingEvents, err := s.calendarRepo.FindEventsByCalendarID(localCalendar.ID)
-	if err != nil {
-		return fmt.Errorf("failed to get existing events: %w", err)
-	}
-
-	// Create a map of existing events by source ID for efficient lookup
-	existingEventMap := make(map[string]*model.CalendarEvent)
-	for _, event := range existingEvents {
-		existingEventMap[event.SourceID] = event
-	}
-
-	var eventsToCreate []*model.CalendarEvent
-	var eventsToUpdate []*model.CalendarEvent
-
-	// Process Google events
-	for _, googleEvent := range googleEvents {
-		// Skip events without summary (cancelled events, etc.)
-		if googleEvent.Summary == "" {
-			continue
-		}
-
-		// Convert Google event to our format
-		event, err := s.convertGoogleEventToCalendarEvent(googleEvent, localCalendar.ID)
+	// Determine sync strategy using SyncTokenManager
+	shouldPerformFullSync := s.syncTokenManager.ShouldPerformFullSync(localCalendar, forceSync)
+	
+	var response *model.GoogleCalendarEventsResponse
+	var isFullSync bool
+	
+	if shouldPerformFullSync {
+		// Perform full sync
+		s.logger.Info("Performing full sync with deleted events", 
+			zap.Uint64("calendar_id", localCalendar.ID),
+			zap.String("google_calendar_id", calendarID),
+			zap.String("reason", "full sync required"))
+		
+		response, err = s.fetchEventsFromGoogleWithResponse(*account.AccessToken, calendarID, "", false)
 		if err != nil {
-			s.logger.Error("Failed to convert Google event",
-				zap.Error(err),
-				zap.String("event_id", googleEvent.ID))
-			continue
+			return fmt.Errorf("failed to fetch events from Google (full sync): %w", err)
 		}
-
-		// Check if event exists locally
-		if existingEvent, exists := existingEventMap[googleEvent.ID]; exists {
-			// Update existing event
-			event.ID = existingEvent.ID // Preserve local ID
-			eventsToUpdate = append(eventsToUpdate, event)
+		isFullSync = true
+		
+		// Clear existing sync token since we're doing a full sync
+		if err := s.syncTokenManager.ClearSyncToken(localCalendar.ID); err != nil {
+			s.logger.Warn("Failed to clear sync token", zap.Error(err))
+		}
+		
+		s.logger.Info("Full sync API request completed",
+			zap.Int("events_received", len(response.Items)),
+			zap.String("next_sync_token", func() string {
+				if len(response.NextSyncToken) > 20 {
+					return response.NextSyncToken[:20] + "..."
+				}
+				return response.NextSyncToken
+			}()))
+	} else {
+		// Perform incremental sync
+		syncToken, err := s.syncTokenManager.GetSyncToken(localCalendar.ID)
+		if err != nil {
+			s.logger.Error("Failed to get sync token, falling back to full sync", zap.Error(err))
+			// Fallback to full sync
+			response, err = s.fetchEventsFromGoogleWithResponse(*account.AccessToken, calendarID, "", false)
+			if err != nil {
+				return fmt.Errorf("failed to fetch events from Google (fallback full sync): %w", err)
+			}
+			isFullSync = true
 		} else {
-			// Create new event
-			eventsToCreate = append(eventsToCreate, event)
+			s.logger.Info("Performing incremental sync with deleted events", 
+				zap.Uint64("calendar_id", localCalendar.ID),
+				zap.String("google_calendar_id", calendarID),
+				zap.String("sync_token", syncToken[:min(len(syncToken), 20)]+"..."))
+			
+			response, err = s.fetchAllEventsWithSyncToken(*account.AccessToken, calendarID, syncToken)
+			if err != nil {
+				// Check if it's a sync token invalidation error (410)
+				if s.isSyncTokenInvalidError(err) {
+					s.logger.Warn("Sync token invalid, performing full sync", 
+						zap.Error(err),
+						zap.Uint64("calendar_id", localCalendar.ID))
+					
+					// Clear invalid sync token and perform full sync
+					if clearErr := s.syncTokenManager.ClearSyncToken(localCalendar.ID); clearErr != nil {
+						s.logger.Warn("Failed to clear invalid sync token", zap.Error(clearErr))
+					}
+					
+					response, err = s.fetchEventsFromGoogleWithResponse(*account.AccessToken, calendarID, "", false)
+					if err != nil {
+						return fmt.Errorf("failed to fetch events from Google (recovery full sync): %w", err)
+					}
+					isFullSync = true
+				} else {
+					return fmt.Errorf("failed to fetch events from Google (incremental sync): %w", err)
+				}
+			} else {
+				isFullSync = false
+				s.logger.Info("Incremental sync API request completed",
+					zap.Int("events_received", len(response.Items)),
+					zap.String("next_sync_token", func() string {
+						if len(response.NextSyncToken) > 20 {
+							return response.NextSyncToken[:20] + "..."
+						}
+						return response.NextSyncToken
+					}()))
+			}
 		}
 	}
 
-	// Create new events
-	if len(eventsToCreate) > 0 {
-		if err := s.calendarRepo.CreateEvents(eventsToCreate); err != nil {
-			s.logger.Error("Failed to create new events",
-				zap.Error(err),
-				zap.Int("event_count", len(eventsToCreate)))
-		} else {
-			s.logger.Info("Created new events",
-				zap.Int("event_count", len(eventsToCreate)),
-				zap.Uint64("calendar_id", localCalendar.ID))
-		}
+	// Process the sync response and get changes
+	changes, err := s.processSyncResponse(response, localCalendar.ID)
+	if err != nil {
+		return fmt.Errorf("failed to process sync response: %w", err)
 	}
 
-	// Update existing events
-	if len(eventsToUpdate) > 0 {
-		if err := s.calendarRepo.UpdateEvents(eventsToUpdate); err != nil {
-			s.logger.Error("Failed to update existing events",
-				zap.Error(err),
-				zap.Int("event_count", len(eventsToUpdate)))
-		} else {
-			s.logger.Info("Updated existing events",
-				zap.Int("event_count", len(eventsToUpdate)),
-				zap.Uint64("calendar_id", localCalendar.ID))
-		}
+	// Apply changes to database
+	if err := s.applySyncChanges(changes, localCalendar.ID); err != nil {
+		return fmt.Errorf("failed to apply sync changes: %w", err)
 	}
 
-	// Update calendar sync timestamp
-	if err := s.calendarRepo.UpdateSyncedAt(localCalendar.ID, time.Now()); err != nil {
-		s.logger.Error("Failed to update calendar sync timestamp", zap.Error(err))
+	// Update sync metadata
+	if response.NextSyncToken != "" {
+		if err := s.syncTokenManager.UpdateSyncMetadata(localCalendar.ID, response.NextSyncToken, isFullSync); err != nil {
+			s.logger.Error("Failed to update sync metadata", zap.Error(err))
+			// Don't fail the sync operation for metadata update failures
+		}
 	}
 
 	s.logger.Info("Successfully synced calendar events",
 		zap.Uint64("user_id", userID),
 		zap.String("calendar_id", calendarID),
-		zap.Int("created_events", len(eventsToCreate)),
-		zap.Int("updated_events", len(eventsToUpdate)))
+		zap.Uint64("local_calendar_id", localCalendar.ID),
+		zap.Bool("is_full_sync", isFullSync),
+		zap.Int("created_events", len(changes.ToCreate)),
+		zap.Int("updated_events", len(changes.ToUpdate)),
+		zap.Int("deleted_events", len(changes.ToDelete)))
 
 	return nil
+}
+
+// isSyncTokenInvalidError checks if an error indicates sync token invalidation (410 Gone)
+func (s *CalendarService) isSyncTokenInvalidError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	return strings.Contains(errStr, "status 410") || strings.Contains(errStr, "Gone")
+}
+
+// min returns the minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // ImportICSCalendar creates a calendar from ICS data and imports all events
@@ -931,13 +1306,16 @@ func (s *CalendarService) ImportICSCalendar(userID uint64, calendarName string, 
 
 	// Create the calendar
 	calendar := &model.Calendar{
-		ID:         utils.GenerateID(),
-		UserID:     userID,
-		Source:     model.SourceISC,
-		Summary:    calendarName,
-		TimeZone:   "UTC", // Default timezone, could be extracted from ICS if available
-		Visibility: model.CalendarVisibilityPrivate,
-		SyncedAt:   time.Now(),
+		ID:           utils.GenerateID(),
+		UserID:       userID,
+		Source:       model.SourceICS,
+		Summary:      calendarName,
+		TimeZone:     "UTC", // Default timezone, could be extracted from ICS if available
+		Visibility:   model.CalendarVisibilityPrivate,
+		SyncedAt:     time.Now(),
+		SyncStatus:   model.CalendarSyncStatusFullSyncComplete, // ICS imports are considered complete
+		SyncToken:    nil, // ICS calendars don't use sync tokens
+		LastFullSync: func() *time.Time { now := time.Now(); return &now }(),
 	}
 
 	// Save calendar to database

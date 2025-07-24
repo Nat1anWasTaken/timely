@@ -171,3 +171,59 @@ func (r *CalendarRepository) UpdateSyncedAt(calendarID uint64, syncedAt time.Tim
 		Where("id = ?", calendarID).
 		Update("synced_at", syncedAt).Error
 }
+
+// UpdateSyncStatus updates the sync status for a calendar
+func (r *CalendarRepository) UpdateSyncStatus(calendarID uint64, status model.CalendarSyncStatus) error {
+	return r.db.Model(&model.Calendar{}).
+		Where("id = ?", calendarID).
+		Update("sync_status", status).Error
+}
+
+// UpdateSyncToken updates the sync token for a calendar
+func (r *CalendarRepository) UpdateSyncToken(calendarID uint64, syncToken string) error {
+	return r.db.Model(&model.Calendar{}).
+		Where("id = ?", calendarID).
+		Update("sync_token", syncToken).Error
+}
+
+// UpdateLastFullSync updates the last full sync timestamp for a calendar
+func (r *CalendarRepository) UpdateLastFullSync(calendarID uint64, lastFullSync time.Time) error {
+	return r.db.Model(&model.Calendar{}).
+		Where("id = ?", calendarID).
+		Update("last_full_sync", lastFullSync).Error
+}
+
+// UpdateSyncMetadata updates sync-related fields in a single transaction
+func (r *CalendarRepository) UpdateSyncMetadata(calendarID uint64, status model.CalendarSyncStatus, syncToken string, lastFullSync *time.Time, syncedAt time.Time) error {
+	updates := map[string]interface{}{
+		"sync_status": status,
+		"synced_at":   syncedAt,
+	}
+	
+	if syncToken != "" {
+		updates["sync_token"] = syncToken
+	}
+	
+	if lastFullSync != nil {
+		updates["last_full_sync"] = *lastFullSync
+	}
+	
+	return r.db.Model(&model.Calendar{}).
+		Where("id = ?", calendarID).
+		Updates(updates).Error
+}
+
+// DeleteEventsBySourceID deletes an event by its source ID (for handling deleted events from Google)
+func (r *CalendarRepository) DeleteEventsBySourceID(sourceID string) error {
+	return r.db.Where("source_id = ?", sourceID).Delete(&model.CalendarEvent{}).Error
+}
+
+// FindEventsBySourceIDs finds events by their source IDs
+func (r *CalendarRepository) FindEventsBySourceIDs(sourceIDs []string) ([]*model.CalendarEvent, error) {
+	var events []*model.CalendarEvent
+	err := r.db.Where("source_id IN ?", sourceIDs).Find(&events).Error
+	if err != nil {
+		return nil, err
+	}
+	return events, nil
+}

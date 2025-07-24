@@ -25,7 +25,15 @@ type CalendarSource string
 
 const (
 	SourceGoogle CalendarSource = "google"
-	SourceISC    CalendarSource = "isc"
+	SourceICS    CalendarSource = "ics"
+)
+
+type CalendarSyncStatus string
+
+const (
+	CalendarSyncStatusNeverSynced      CalendarSyncStatus = "never_synced"
+	CalendarSyncStatusFullSyncComplete CalendarSyncStatus = "full_sync_complete"
+	CalendarSyncStatusIncrementalSync  CalendarSyncStatus = "incremental_sync"
 )
 
 // CalendarEvent represents an event in the calendar
@@ -37,7 +45,7 @@ type CalendarEvent struct {
 	Title       string                  `json:"title"`              // Event title (summary)
 	Start       time.Time               `json:"start"`              // ISO8601 datetime or date (for all-day)
 	End         time.Time               `json:"end"`                // ISO8601 datetime or date
-	AllDay      bool                    `json:"allDay"`             // True if it's an all-day event
+	AllDay      bool                    `json:"all_day"`            // True if it's an all-day event
 	EventColor  string                  `json:"event_color"`        // Optional display color
 	Location    string                  `json:"location"`           // Optional event location
 	Description string                  `json:"description"`        // Optional description
@@ -61,6 +69,9 @@ type Calendar struct {
 	EventColor     *string            `json:"event_color,omitempty"`
 	Visibility     CalendarVisibility `json:"visibility"`
 	SyncedAt       time.Time          `json:"synced_at"`
+	SyncStatus     CalendarSyncStatus `json:"sync_status" gorm:"default:'never_synced'"`
+	SyncToken      *string            `json:"sync_token,omitempty"`
+	LastFullSync   *time.Time         `json:"last_full_sync,omitempty"`
 	CreatedAt      time.Time          `json:"created_at"`
 	UpdatedAt      time.Time          `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt     `json:"-" gorm:"index"`
@@ -144,12 +155,14 @@ type GoogleCalendarEventTime struct {
 // GoogleCalendarEventsResponse represents the response from Google Calendar events API
 // @Description Google Calendar events response
 type GoogleCalendarEventsResponse struct {
-	Kind     string                 `json:"kind" example:"calendar#events"`
-	ETag     string                 `json:"etag" example:"\"00000000000000000000\""`
-	Summary  string                 `json:"summary" example:"My Calendar"`
-	Updated  string                 `json:"updated" example:"2024-01-01T00:00:00.000Z"`
-	TimeZone string                 `json:"timeZone" example:"America/Los_Angeles"`
-	Items    []*GoogleCalendarEvent `json:"items"`
+	Kind          string                 `json:"kind" example:"calendar#events"`
+	ETag          string                 `json:"etag" example:"\"00000000000000000000\""`
+	Summary       string                 `json:"summary" example:"My Calendar"`
+	Updated       string                 `json:"updated" example:"2024-01-01T00:00:00.000Z"`
+	TimeZone      string                 `json:"timeZone" example:"America/Los_Angeles"`
+	NextSyncToken string                 `json:"nextSyncToken,omitempty" example:"sync_token_123"`
+	NextPageToken string                 `json:"nextPageToken,omitempty" example:"page_token_123"`
+	Items         []*GoogleCalendarEvent `json:"items"`
 }
 
 // CalendarEventsRequest represents the request for getting calendar events

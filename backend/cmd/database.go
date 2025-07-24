@@ -17,6 +17,7 @@ func InitializeDatabase() {
 	// Initialize gormigrate with migrations
 	m := gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{
 		migrations.InitialSchema,
+		migrations.AddSyncFields,
 	})
 
 	// Run migrations
