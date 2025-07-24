@@ -61,7 +61,7 @@ export interface Account {
 }
 
 // Calendar Types
-export type CalendarSource = "google" | "ics";
+export type CalendarSource = "google" | "isc";
 export type CalendarVisibility = "public" | "private";
 export type CalendarEventVisibility = "public" | "private" | "inherited";
 
@@ -75,7 +75,7 @@ export interface Calendar {
     time_zone?: string;
     visibility: CalendarVisibility;
     event_color?: string;
-    event_nickname?: string;
+    event_redaction?: string;
     synced_at?: string;
     created_at: string;
     updated_at: string;
@@ -166,6 +166,26 @@ export interface ImportICSResponse {
     events_count?: number;
 }
 
+export interface CalendarUpdateRequest {
+    summary?: string;
+    description?: string;
+    time_zone?: string;
+    visibility?: CalendarVisibility;
+    event_color?: string;
+    event_redaction?: string;
+}
+
+export interface CalendarUpdateResponse {
+    success: boolean;
+    message: string;
+    calendar: Calendar;
+}
+
+export interface CalendarDeleteResponse {
+    success: boolean;
+    message: string;
+}
+
 // API Query Parameters
 export interface GetCalendarEventsParams {
     start_timestamp: string;
@@ -185,4 +205,10 @@ export interface GetGoogleCalendarsParams {
 export interface GoogleOAuthLoginParams {
     mode?: "login" | "link";
     from?: string;
+}
+
+export interface GetPublicUserEventsParams {
+    username: string;
+    start_timestamp: string;
+    end_timestamp: string;
 }

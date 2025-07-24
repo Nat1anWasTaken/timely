@@ -1,10 +1,14 @@
 import { env } from "$env/dynamic/public";
 import type {
     AuthResponse,
+    CalendarDeleteResponse,
     CalendarEventsResponse,
     CalendarListResponse,
+    CalendarUpdateRequest,
+    CalendarUpdateResponse,
     GetCalendarEventsParams,
     GetGoogleCalendarsParams,
+    GetPublicUserEventsParams,
     GoogleOAuthLoginParams,
     ImportCalendarRequest,
     ImportCalendarResponse,
@@ -119,6 +123,17 @@ class ApiClient {
         });
     }
 
+    private patch<T>(endpoint: string, body?: unknown): Promise<T> {
+        return this.request<T>(endpoint, {
+            method: "PATCH",
+            body: body ? JSON.stringify(body) : undefined
+        });
+    }
+
+    private delete<T>(endpoint: string): Promise<T> {
+        return this.request<T>(endpoint, { method: "DELETE" });
+    }
+
     // Authentication Methods
     async login(credentials: LoginRequest): Promise<AuthResponse> {
         const response = await this.post<AuthResponse>("/api/auth/login", credentials);
@@ -202,9 +217,25 @@ class ApiClient {
         return this.get<ImportedCalendarsResponse>("/api/calendars");
     }
 
+    async updateCalendar(id: string, request: CalendarUpdateRequest): Promise<CalendarUpdateResponse> {
+        return this.patch<CalendarUpdateResponse>(`/api/calendars/${id}`, request);
+    }
+
+    async deleteCalendar(id: string): Promise<CalendarDeleteResponse> {
+        return this.delete<CalendarDeleteResponse>(`/api/calendars/${id}`);
+    }
+
     // User Methods
     async getUserProfile(): Promise<UserProfileResponse> {
         return this.get<UserProfileResponse>("/api/users/me");
+    }
+
+    async getPublicUserEvents(params: GetPublicUserEventsParams): Promise<CalendarEventsResponse> {
+        const queryParams: Record<string, string> = {
+            start_timestamp: params.start_timestamp,
+            end_timestamp: params.end_timestamp
+        };
+        return this.get<CalendarEventsResponse>(`/api/users/${params.username}/events`, queryParams);
     }
 
     // Utility Methods
