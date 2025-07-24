@@ -519,7 +519,63 @@ const docTemplate = `{
             }
         },
         "/api/calendars/{id}": {
-            "put": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes an existing calendar and all its associated events",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Calendar"
+                ],
+                "summary": "Delete Calendar",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Calendar ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Calendar deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.CalendarDeleteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid calendar ID",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Calendar not found or access denied",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
                 "security": [
                     {
                         "BearerAuth": []
@@ -563,62 +619,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request - Invalid request body or calendar ID",
-                        "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized - Authentication required",
-                        "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found - Calendar not found or access denied",
-                        "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Deletes an existing calendar and all its associated events",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Calendar"
-                ],
-                "summary": "Delete Calendar",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Calendar ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Calendar deleted successfully",
-                        "schema": {
-                            "$ref": "#/definitions/model.CalendarDeleteResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request - Invalid calendar ID",
                         "schema": {
                             "$ref": "#/definitions/model.ErrorResponse"
                         }

@@ -200,7 +200,7 @@ func (h *CalendarHandler) GetImportedCalendars(w http.ResponseWriter, r *http.Re
 // @Failure 401 {object} model.ErrorResponse "Unauthorized - Authentication required"
 // @Failure 404 {object} model.ErrorResponse "Not Found - Calendar not found or access denied"
 // @Failure 500 {object} model.ErrorResponse "Internal server error"
-// @Router /api/calendars/{id} [put]
+// @Router /api/calendars/{id} [patch]
 func (h *CalendarHandler) UpdateCalendar(w http.ResponseWriter, r *http.Request) {
 	// Get user from context (set by JWT middleware)
 	user, ok := middleware.GetUserFromContext(r.Context())
