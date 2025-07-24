@@ -204,7 +204,7 @@ class ApiClient {
 
     // User Methods
     async getUserProfile(): Promise<UserProfileResponse> {
-        return this.get<UserProfileResponse>("/api/users/profile");
+        return this.get<UserProfileResponse>("/api/users/me");
     }
 
     // Utility Methods

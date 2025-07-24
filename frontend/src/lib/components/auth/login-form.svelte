@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { page } from "$app/state";
     import { api } from "$lib/api";
 
     import { Button } from "$lib/components/ui/button";
@@ -17,9 +16,7 @@
     let email = $state("");
     let password = $state("");
 
-    let googleAuthUrl = $derived(
-        `${api.baseUrl}/api/auth/google/login?mode=login&from=${page.url.origin}`
-    );
+    let googleAuthUrl = $derived(`${api.baseUrl}/api/auth/google/login?mode=login&from=/`);
 </script>
 
 <Card.Root class="mx-auto w-full max-w-sm">
