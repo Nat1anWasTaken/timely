@@ -4,12 +4,15 @@
     import type { Calendar } from "$lib/types/api";
     import { getSourceString } from "$lib/utils";
     import { Calendar as CalendarIcon, Settings } from "@lucide/svelte";
+    import CalendarSettingsDialog from "./calendar-settings-dialog.svelte";
 
     interface Props {
         calendar: Calendar;
+        onUpdate?: (calendar: Calendar) => void;
     }
 
-    let { calendar }: Props = $props();
+    let { calendar, onUpdate }: Props = $props();
+    let showSettingsDialog = $state(false);
 </script>
 
 <Card class="mb-0 justify-center">
@@ -29,9 +32,16 @@
                     </p>
                 </div>
             </div>
-            <Button variant="ghost" size="sm" class="flex-shrink-0">
+            <Button variant="ghost" size="sm" class="flex-shrink-0" onclick={() => showSettingsDialog = true}>
                 <Settings class="h-4 w-4" />
             </Button>
         </div>
     </CardHeader>
 </Card>
+
+<CalendarSettingsDialog 
+    {calendar} 
+    open={showSettingsDialog} 
+    onOpenChange={(open) => showSettingsDialog = open}
+    {onUpdate}
+/>

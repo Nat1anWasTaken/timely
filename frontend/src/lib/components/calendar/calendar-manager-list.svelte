@@ -10,6 +10,10 @@
     });
 
     let calendars = $derived($importedCalendarsQuery.data?.calendars || []);
+
+    function handleCalendarUpdate(updatedCalendar: Calendar) {
+        // Query cache will be automatically invalidated by the mutation
+    }
 </script>
 
 <div class="space-y-4">
@@ -31,7 +35,7 @@
     {:else}
         <div class="flex flex-col gap-3 space-y-3">
             {#each calendars as calendar (calendar.id)}
-                <CalendarManagerCard {calendar} />
+                <CalendarManagerCard {calendar} onUpdate={handleCalendarUpdate} />
             {/each}
         </div>
     {/if}

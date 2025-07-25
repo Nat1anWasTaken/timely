@@ -40,7 +40,7 @@
 </script>
 
 {#if data.isViewingSelf && data.user?.user}
-    <div class="container flex flex-row items-start justify-center gap-4 p-4">
+    <div class="container flex h-full flex-col items-start justify-center gap-4 p-4 md:flex-row">
         <!-- User Profile Header -->
         <div class="mb-8 flex flex-row items-start gap-4">
             <Avatar class="h-16 w-16">
@@ -65,10 +65,13 @@
                 Error loading calendar events: {$calendarEventsQuery.error.message}
             </div>
         {/if}
-
-        <div class:opacity-50={$calendarEventsQuery.isLoading}>
-            <Calendar {calendars} bind:year bind:month onMonthChange={handleMonthChange} />
-        </div>
+        <Calendar
+            {calendars}
+            bind:year
+            bind:month
+            onMonthChange={handleMonthChange}
+            class="h-full w-full"
+        />
     </div>
 {:else}
     <div class="container p-4">

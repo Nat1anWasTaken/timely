@@ -10,9 +10,9 @@
     let { day, children }: Props = $props();
 </script>
 
-<Card class="h-32 gap-0 p-4">
+<Card class="max flex max-h-24 min-h-30 flex-col gap-0 p-4">
     <p class="text-sm text-muted-foreground">{day}</p>
-    <div class="flex h-full flex-col items-start justify-start">
+    <div class="flex flex-1 flex-col items-start justify-start overflow-y-scroll">
         {#if children}
             {@render children()}
         {/if}

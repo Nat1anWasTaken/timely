@@ -23,7 +23,7 @@
             <Navbar />
         {/if}
 
-        <div class="flex h-full w-full flex-1 items-center justify-center overflow-y-auto">
+        <div class="flex h-full w-full flex-1 items-center justify-center overflow-y-scroll">
             {@render children()}
         </div>
     </div>

@@ -12,7 +12,7 @@
 
 <Card
     class={cn(
-        "h-12 items-center justify-center",
+        "flex min-h-12 items-center justify-center",
         specialDay ? "bg-primary text-primary-foreground" : ""
     )}
 >

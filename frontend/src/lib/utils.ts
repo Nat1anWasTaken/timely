@@ -17,7 +17,7 @@ export function getSourceString(source: CalendarSource): string {
     switch (source) {
         case "google":
             return "Google Calendar";
-        case "ics":
+        case "isc":
             return "ICS File";
         default:
             return "Unknown Source";
