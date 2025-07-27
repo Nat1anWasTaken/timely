@@ -6,7 +6,7 @@
     import CalendarManagerSheet from "$lib/components/calendar/calendar-manager-sheet.svelte";
     import { createQuery } from "@tanstack/svelte-query";
     import { api } from "$lib/api";
-    import { getMonthBoundaries, createQueryKey } from "$lib/utils/date";
+    import { getExtendedMonthBoundaries, createExtendedQueryKey } from "$lib/utils/date";
 
     let { data }: PageProps = $props();
 
@@ -18,9 +18,9 @@
     let calendarEventsQuery = $derived(
         data.isViewingSelf
             ? createQuery({
-                  queryKey: createQueryKey(year, month),
+                  queryKey: createExtendedQueryKey(year, month),
                   queryFn: async () => {
-                      const { start_timestamp, end_timestamp } = getMonthBoundaries(year, month);
+                      const { start_timestamp, end_timestamp } = getExtendedMonthBoundaries(year, month);
                       return await api.getCalendarEvents({ start_timestamp, end_timestamp });
                   },
                   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -33,9 +33,9 @@
     let publicCalendarEventsQuery = $derived(
         !data.isViewingSelf && data.publicUser
             ? createQuery({
-                  queryKey: ["public-events", data.publicUser.username, year, month],
+                  queryKey: ["public-events-extended", data.publicUser.username, year, month],
                   queryFn: async () => {
-                      const { start_timestamp, end_timestamp } = getMonthBoundaries(year, month);
+                      const { start_timestamp, end_timestamp } = getExtendedMonthBoundaries(year, month);
                       return await api.getPublicUserEvents({
                           username: data.publicUser!.username,
                           start_timestamp,

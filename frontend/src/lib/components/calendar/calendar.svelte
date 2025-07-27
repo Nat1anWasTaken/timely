@@ -24,7 +24,7 @@
         class: className
     }: Props = $props();
 
-    let calendarDays = $derived(calendar().of(year, month).calendar);
+    let calendarDays = $derived((calendar() as any).detailed(year, month).calendar);
 
     // Flatten events from all calendars with their calendar context
     let events = $derived(
@@ -36,9 +36,8 @@
         onMonthChange?.(year, month);
     });
 
-    // Helper function to get events for a specific day
-    function getEventsForDay(day: number) {
-        const targetDate = new Date(year, month, day);
+    // Helper function to get events for a specific date
+    function getEventsForDate(targetDate: Date) {
         return events.filter(({ event }) => {
             const eventStart = new Date(event.start);
             const eventEnd = new Date(event.end);
@@ -71,17 +70,12 @@
 
         <!--Calendar Days-->
         {#each calendarDays as daysInWeek, index (index)}
-            {#each daysInWeek as day, index (index)}
-                {#if day !== 0}
-                    <Day {day}>
-                        {#each getEventsForDay(day) as { event, calendar } (event.id)}
-                            <CalendarEventComponent {event} {calendar} />
-                        {/each}
-                    </Day>
-                {:else}
-                    <!-- Empty day cell for days not in the current month -->
-                    <Card class="flex max-h-24 min-h-30 flex-col gap-0 overflow-y-scroll p-4" />
-                {/if}
+            {#each daysInWeek as dayInfo, index (index)}
+                <Day day={dayInfo.day} isCurrentMonth={dayInfo.isInPrimaryMonth}>
+                    {#each getEventsForDate(dayInfo.date) as { event, calendar } (event.id)}
+                        <CalendarEventComponent {event} {calendar} />
+                    {/each}
+                </Day>
             {/each}
         {/each}
     </div>
