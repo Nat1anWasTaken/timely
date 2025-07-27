@@ -37,6 +37,20 @@ export interface UserProfileResponse {
     user: User;
 }
 
+export interface PublicUserProfile {
+    id: string;
+    username: string;
+    display_name: string;
+    picture?: string;
+    created_at: string;
+}
+
+export interface PublicUserProfileResponse {
+    success: boolean;
+    message: string;
+    user: PublicUserProfile;
+}
+
 // User Types
 export interface User {
     id: string;

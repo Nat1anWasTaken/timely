@@ -16,6 +16,7 @@ import type {
     ImportICSRequest,
     ImportICSResponse,
     LoginRequest,
+    PublicUserProfileResponse,
     RegisterRequest,
     UserProfileResponse
 } from "./types/api.js";
@@ -228,6 +229,10 @@ class ApiClient {
     // User Methods
     async getUserProfile(): Promise<UserProfileResponse> {
         return this.get<UserProfileResponse>("/api/users/me");
+    }
+
+    async getPublicUserProfile(username: string): Promise<PublicUserProfileResponse> {
+        return this.get<PublicUserProfileResponse>(`/api/users/${username}`);
     }
 
     async getPublicUserEvents(params: GetPublicUserEventsParams): Promise<CalendarEventsResponse> {

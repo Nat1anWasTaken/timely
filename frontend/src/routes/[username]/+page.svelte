@@ -14,24 +14,58 @@
     let year = $state(currentDate.getFullYear());
     let month = $state(currentDate.getMonth());
 
-    // Create reactive query for calendar events
+    // Create reactive query for calendar events (private view)
     let calendarEventsQuery = $derived(
-        createQuery({
-            queryKey: createQueryKey(year, month),
-            queryFn: async () => {
-                const { start_timestamp, end_timestamp } = getMonthBoundaries(year, month);
-                return await api.getCalendarEvents({ start_timestamp, end_timestamp });
-            },
-            staleTime: 5 * 60 * 1000, // 5 minutes
-            gcTime: 30 * 60 * 1000 // 30 minutes
-        })
+        data.isViewingSelf
+            ? createQuery({
+                  queryKey: createQueryKey(year, month),
+                  queryFn: async () => {
+                      const { start_timestamp, end_timestamp } = getMonthBoundaries(year, month);
+                      return await api.getCalendarEvents({ start_timestamp, end_timestamp });
+                  },
+                  staleTime: 5 * 60 * 1000, // 5 minutes
+                  gcTime: 30 * 60 * 1000 // 30 minutes
+              })
+            : null
     );
 
-    let calendars = $derived(
-        $calendarEventsQuery.data?.success && $calendarEventsQuery.data.calendars
-            ? $calendarEventsQuery.data.calendars
-            : []
+    // Create reactive query for public calendar events
+    let publicCalendarEventsQuery = $derived(
+        !data.isViewingSelf && data.publicUser
+            ? createQuery({
+                  queryKey: ["public-events", data.publicUser.username, year, month],
+                  queryFn: async () => {
+                      const { start_timestamp, end_timestamp } = getMonthBoundaries(year, month);
+                      return await api.getPublicUserEvents({
+                          username: data.publicUser!.username,
+                          start_timestamp,
+                          end_timestamp
+                      });
+                  },
+                  staleTime: 5 * 60 * 1000, // 5 minutes
+                  gcTime: 30 * 60 * 1000 // 30 minutes
+              })
+            : null
     );
+
+    let calendars = $derived.by(() => {
+        if (data.isViewingSelf && calendarEventsQuery) {
+            const query = $calendarEventsQuery;
+            if (query?.data?.success && query.data.calendars) {
+                return query.data.calendars;
+            } else {
+                return [];
+            }
+        } else if (!data.isViewingSelf && publicCalendarEventsQuery) {
+            const query = $publicCalendarEventsQuery;
+            if (query?.data?.success && query.data.calendars) {
+                return query.data.calendars;
+            } else {
+                return [];
+            }
+        }
+        return [];
+    });
 
     function handleMonthChange(newYear: number, newMonth: number) {
         year = newYear;
@@ -39,20 +73,20 @@
     }
 </script>
 
-{#if data.isViewingSelf && data.user?.user}
+{#if data.isViewingSelf && data.user}
     <div class="container flex h-full flex-col items-start justify-center gap-4 p-4 md:flex-row">
         <!-- User Profile Header -->
         <div class="mb-8 flex flex-row items-start gap-4">
             <Avatar class="h-16 w-16">
-                <AvatarImage src={data.user.user.picture} alt={data.user.user.display_name} />
+                <AvatarImage src={data.user.picture} alt={data.user.display_name} />
                 <AvatarFallback>
-                    {data.user.user.display_name.charAt(0).toUpperCase()}
+                    {data.user.display_name.charAt(0).toUpperCase()}
                 </AvatarFallback>
             </Avatar>
             <div class="flex-1">
-                <h1 class="text-3xl font-bold">{data.user.user.display_name}'s Calendar</h1>
+                <h1 class="text-3xl font-bold">{data.user.display_name}'s Calendar</h1>
                 <div class="mt-3">
-                    <CalendarManagerSheet user={data.user.user}>
+                    <CalendarManagerSheet user={data.user}>
                         <Button variant="outline" size="sm">Manage my calendars</Button>
                     </CalendarManagerSheet>
                 </div>
@@ -60,11 +94,52 @@
         </div>
 
         <!-- Calendar Component -->
-        {#if $calendarEventsQuery.error}
-            <div class="mb-4 rounded-lg bg-red-50 p-4 text-red-800">
-                Error loading calendar events: {$calendarEventsQuery.error.message}
-            </div>
+        {#if calendarEventsQuery}
+            {@const query = $calendarEventsQuery}
+            {#if query?.error}
+                <div class="mb-4 rounded-lg bg-red-50 p-4 text-red-800">
+                    Error loading calendar events: {query.error.message}
+                </div>
+            {/if}
         {/if}
+        <Calendar
+            {calendars}
+            bind:year
+            bind:month
+            onMonthChange={handleMonthChange}
+            class="h-full w-full"
+        />
+    </div>
+{:else if !data.isViewingSelf && data.publicUser}
+    <div class="container flex h-full flex-col items-start justify-center gap-4 p-4 md:flex-row">
+        <!-- Public User Profile Header -->
+        <div class="mb-8 flex flex-row items-start gap-4">
+            <Avatar class="h-16 w-16">
+                <AvatarImage src={data.publicUser.picture} alt={data.publicUser.display_name} />
+                <AvatarFallback>
+                    {data.publicUser.display_name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+            </Avatar>
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold">{data.publicUser.display_name}'s Calendar</h1>
+                <p class="text-muted-foreground text-sm">
+                    @{data.publicUser.username} • Joined {new Date(
+                        data.publicUser.created_at
+                    ).toLocaleDateString()}
+                </p>
+            </div>
+        </div>
+
+        <!-- Public Calendar Component -->
+        {#if publicCalendarEventsQuery}
+            {@const query = $publicCalendarEventsQuery}
+            {#if query?.error}
+                <div class="mb-4 rounded-lg bg-red-50 p-4 text-red-800">
+                    Error loading calendar events: {query.error.message}
+                </div>
+            {/if}
+        {/if}
+
         <Calendar
             {calendars}
             bind:year
