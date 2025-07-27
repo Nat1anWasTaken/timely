@@ -67,6 +67,8 @@
             updateRequest.event_color = formData.eventColor;
             updateRequest.event_redaction = formData.eventRedaction;
             updateRequest.time_zone = formData.timeZone;
+        } else if (calendar.source === "google") {
+            updateRequest.event_redaction = formData.eventRedaction;
         }
 
         $updateCalendarMutation.mutate(updateRequest);
@@ -153,7 +155,7 @@
                     id="event-redaction"
                     placeholder="e.g., [PRIVATE]"
                     bind:value={formData.eventRedaction}
-                    disabled={isExternalSource}
+                    disabled={isExternalSource && calendar.source !== "google"}
                 />
             </div>
 
