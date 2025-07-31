@@ -20,7 +20,10 @@
             ? createQuery({
                   queryKey: createExtendedQueryKey(year, month),
                   queryFn: async () => {
-                      const { start_timestamp, end_timestamp } = getExtendedMonthBoundaries(year, month);
+                      const { start_timestamp, end_timestamp } = getExtendedMonthBoundaries(
+                          year,
+                          month
+                      );
                       return await api.getCalendarEvents({ start_timestamp, end_timestamp });
                   },
                   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -35,7 +38,10 @@
             ? createQuery({
                   queryKey: ["public-events-extended", data.publicUser.username, year, month],
                   queryFn: async () => {
-                      const { start_timestamp, end_timestamp } = getExtendedMonthBoundaries(year, month);
+                      const { start_timestamp, end_timestamp } = getExtendedMonthBoundaries(
+                          year,
+                          month
+                      );
                       return await api.getPublicUserEvents({
                           username: data.publicUser!.username,
                           start_timestamp,

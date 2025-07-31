@@ -49,6 +49,20 @@
             );
         });
     }
+
+    // Helper function to get corner rounding classes based on position
+    function getCornerRoundingClass(rowIndex: number, colIndex: number) {
+        const isFirstRow = rowIndex === 0;
+        const isLastRow = rowIndex === calendarDays.length - 1;
+        const isFirstCol = colIndex === 0;
+        const isLastCol = colIndex === 6;
+
+        if (isFirstRow && isFirstCol) return "rounded-tl-lg";
+        if (isFirstRow && isLastCol) return "rounded-tr-lg";
+        if (isLastRow && isFirstCol) return "rounded-bl-lg";
+        if (isLastRow && isLastCol) return "rounded-br-lg";
+        return "";
+    }
 </script>
 
 <div class={cn("flex h-full w-full flex-col", className)}>
@@ -58,20 +72,16 @@
     </div>
 
     <!--Calendar Grid-->
-    <div class="grid flex-1 grid-cols-7 gap-2" style="grid-template-rows: auto repeat(6, 1fr);">
-        <!--Weekday Headers-->
-        <Weekday specialDay>Sunday</Weekday>
-        <Weekday>Monday</Weekday>
-        <Weekday>Tuesday</Weekday>
-        <Weekday>Wednesday</Weekday>
-        <Weekday>Thursday</Weekday>
-        <Weekday>Friday</Weekday>
-        <Weekday specialDay>Saturday</Weekday>
+    <div class="grid flex-1 grid-cols-7" style="grid-template-rows: auto repeat(6, 1fr);">
 
         <!--Calendar Days-->
-        {#each calendarDays as daysInWeek, index (index)}
-            {#each daysInWeek as dayInfo, index (index)}
-                <Day day={dayInfo.day} isCurrentMonth={dayInfo.isInPrimaryMonth}>
+        {#each calendarDays as daysInWeek, rowIndex (rowIndex)}
+            {#each daysInWeek as dayInfo, colIndex (colIndex)}
+                <Day 
+                    day={dayInfo.day} 
+                    isCurrentMonth={dayInfo.isInPrimaryMonth}
+                    specialBorderClass={getCornerRoundingClass(rowIndex, colIndex)}
+                >
                     {#each getEventsForDate(dayInfo.date) as { event, calendar } (event.id)}
                         <CalendarEventComponent {event} {calendar} />
                     {/each}
