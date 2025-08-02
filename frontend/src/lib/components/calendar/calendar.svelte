@@ -63,6 +63,28 @@
         if (isLastRow && isLastCol) return "rounded-br-lg";
         return "";
     }
+
+    function getDayOfWeek(rowIndex: number, colIndex: number) {
+        if (rowIndex !== 0) {
+            return "";
+        }
+
+        if (colIndex === 0) {
+            return "Sun";
+        } else if (colIndex === 1) {
+            return "Mon";
+        } else if (colIndex === 2) {
+            return "Tue";
+        } else if (colIndex === 3) {
+            return "Wed";
+        } else if (colIndex === 4) {
+            return "Thu";
+        } else if (colIndex === 5) {
+            return "Fri";
+        } else if (colIndex === 6) {
+            return "Sat";
+        }
+    }
 </script>
 
 <div class={cn("flex h-full w-full flex-col", className)}>
@@ -72,15 +94,15 @@
     </div>
 
     <!--Calendar Grid-->
-    <div class="grid flex-1 grid-cols-7" style="grid-template-rows: auto repeat(6, 1fr);">
-
+    <div class="grid grid-cols-7" style="grid-template-rows: auto repeat(6, 1fr);">
         <!--Calendar Days-->
         {#each calendarDays as daysInWeek, rowIndex (rowIndex)}
             {#each daysInWeek as dayInfo, colIndex (colIndex)}
-                <Day 
-                    day={dayInfo.day} 
+                <Day
+                    day={dayInfo.day}
                     isCurrentMonth={dayInfo.isInPrimaryMonth}
                     specialBorderClass={getCornerRoundingClass(rowIndex, colIndex)}
+                    dayOfWeek={getDayOfWeek(rowIndex, colIndex)}
                 >
                     {#each getEventsForDate(dayInfo.date) as { event, calendar } (event.id)}
                         <CalendarEventComponent {event} {calendar} />

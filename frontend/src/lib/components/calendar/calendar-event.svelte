@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { CalendarEvent, Calendar } from "$lib/types/api";
-    import { HoverCard, HoverCardContent, HoverCardTrigger } from "$lib/components/ui/hover-card";
+    import { Dialog, DialogContent, DialogTrigger } from "$lib/components/ui/dialog";
     import { getTextColor } from "$lib/utils";
     import CalendarEventDetails from "./calendar-event-details.svelte";
 
@@ -15,16 +15,32 @@
     let textColor = $derived(getTextColor(backgroundColor));
 </script>
 
-<HoverCard openDelay={100} closeDelay={100}>
-    <HoverCardTrigger class="w-full">
-        <div
-            class="mb-1 max-w-full cursor-pointer truncate rounded px-1 py-0.5 text-xs transition-opacity hover:opacity-80"
-            style="background-color: {backgroundColor}; color: {textColor}"
-        >
-            {event.title}
-        </div>
-    </HoverCardTrigger>
-    <HoverCardContent class="w-80" side="right">
+<Dialog>
+    <DialogTrigger class="w-full">
+        {#if event.all_day}
+            <div
+                class="mb-1 max-w-full cursor-pointer truncate rounded px-1 py-0.5 text-xs text-left transition-opacity hover:opacity-80"
+                style="background-color: {backgroundColor}; color: {textColor}"
+            >
+                {event.title}
+            </div>
+        {:else}
+            <div
+                class="mb-1 flex max-w-full cursor-pointer items-center gap-1 text-xs transition-opacity hover:opacity-80"
+            >
+                <div
+                    class="h-2 w-2 shrink-0 rounded-full"
+                    style="background-color: {backgroundColor}"
+                ></div>
+                <span
+                    class="truncate text-left"
+                >
+                    {event.title}
+                </span>
+            </div>
+        {/if}
+    </DialogTrigger>
+    <DialogContent class="max-w-md">
         <CalendarEventDetails {event} {calendar} />
-    </HoverCardContent>
-</HoverCard>
+    </DialogContent>
+</Dialog>

@@ -103,7 +103,7 @@ export interface CalendarEvent {
     description?: string;
     start: string;
     end: string;
-    allDay: boolean;
+    all_day: boolean;
     location?: string;
     visibility: CalendarEventVisibility;
     event_color?: string;
