@@ -80,7 +80,7 @@
 </script>
 
 {#if data.isViewingSelf && data.user}
-    <div class="container flex h-full flex-col items-start justify-center gap-4 p-4 md:flex-row">
+    <div class="container flex h-full flex-col items-start gap-4 p-4 md:flex-row">
         <!-- User Profile Header -->
         <div class="mb-8 flex flex-row items-start gap-4">
             <Avatar class="h-16 w-16">
@@ -117,7 +117,7 @@
         />
     </div>
 {:else if !data.isViewingSelf && data.publicUser}
-    <div class="container flex h-full flex-col items-start justify-center gap-4 p-4 md:flex-row">
+    <div class="container flex h-full flex-col items-start gap-4 p-4 md:flex-row">
         <!-- Public User Profile Header -->
         <div class="mb-8 flex flex-row items-start gap-4">
             <Avatar class="h-16 w-16">
