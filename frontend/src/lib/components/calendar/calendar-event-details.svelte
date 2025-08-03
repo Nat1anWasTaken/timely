@@ -12,6 +12,7 @@
     let startDate = $derived(new Date(event.start));
     let endDate = $derived(new Date(event.end));
     let isSameDay = $derived(startDate.toDateString() === endDate.toDateString());
+    let showFullDescription = $state(false);
 </script>
 
 <div class="space-y-3 p-4">
@@ -68,14 +69,28 @@
     {#if event.description}
         <div class="space-y-1">
             <div class="flex items-start gap-2">
-                <svg class="h-4 w-4 text-muted-foreground mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
                 </svg>
                 <div class="text-sm text-muted-foreground leading-relaxed">
-                    {#if event.description.length > 150}
-                        {event.description.substring(0, 150)}...
+                    {#if event.description.length > 150 && !showFullDescription}
+                        {@html event.description.substring(0, 150)}...
+                        <button 
+                            class="text-primary hover:text-primary/80 ml-1 underline text-xs"
+                            onclick={() => showFullDescription = true}
+                        >
+                            Show more
+                        </button>
                     {:else}
-                        {event.description}
+                        {@html event.description}
+                        {#if event.description.length > 150 && showFullDescription}
+                            <button 
+                                class="text-primary hover:text-primary/80 ml-1 underline text-xs block mt-1"
+                                onclick={() => showFullDescription = false}
+                            >
+                                Show less
+                            </button>
+                        {/if}
                     {/if}
                 </div>
             </div>
