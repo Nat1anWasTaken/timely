@@ -51,6 +51,17 @@ export interface PublicUserProfileResponse {
     user: PublicUserProfile;
 }
 
+export interface UpdateUserProfileRequest {
+    username?: string;
+    display_name?: string;
+}
+
+export interface UpdateUserProfileResponse {
+    success: boolean;
+    message: string;
+    user: User;
+}
+
 // User Types
 export interface User {
     id: string;

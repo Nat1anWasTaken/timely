@@ -73,3 +73,18 @@ type PublicUserProfileResponse struct {
 	Message string             `json:"message" example:"Public user profile retrieved successfully"`
 	User    *PublicUserProfile `json:"user"`
 }
+
+// UpdateUserProfileRequest represents the request for updating user profile
+// @Description User profile update request
+type UpdateUserProfileRequest struct {
+	Username    *string `json:"username,omitempty" example:"newusername"`    // New username (optional)
+	DisplayName *string `json:"display_name,omitempty" example:"New Name"`   // New display name (optional)
+}
+
+// UpdateUserProfileResponse represents the response for updating user profile
+// @Description User profile update response
+type UpdateUserProfileResponse struct {
+	Success bool   `json:"success" example:"true"`
+	Message string `json:"message" example:"User profile updated successfully"`
+	User    *User  `json:"user"`
+}

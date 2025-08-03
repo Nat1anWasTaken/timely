@@ -4,15 +4,20 @@
     import { Avatar, AvatarFallback, AvatarImage } from "$lib/components/ui/avatar";
     import { Button } from "$lib/components/ui/button";
     import CalendarManagerSheet from "$lib/components/calendar/calendar-manager-sheet.svelte";
+    import UserProfileEditSheet from "$lib/components/user/user-profile-edit-sheet.svelte";
     import { createQuery } from "@tanstack/svelte-query";
     import { api } from "$lib/api";
     import { getExtendedMonthBoundaries, createExtendedQueryKey } from "$lib/utils/date";
+    import { goto } from "$app/navigation";
 
     let { data }: PageProps = $props();
 
     let currentDate = new Date();
     let year = $state(currentDate.getFullYear());
     let month = $state(currentDate.getMonth());
+
+    // Track user data for updates
+    let currentUser = $state(data.user);
 
     // Create reactive query for calendar events (private view)
     let calendarEventsQuery = $derived(
@@ -77,6 +82,16 @@
         year = newYear;
         month = newMonth;
     }
+
+    function handleUserUpdate(updatedUser: typeof data.user) {
+        const oldUsername = currentUser?.username;
+        currentUser = updatedUser;
+        
+        // If username changed, redirect to the new username URL
+        if (updatedUser && oldUsername && updatedUser.username !== oldUsername) {
+            goto(`/${updatedUser.username}`);
+        }
+    }
 </script>
 
 {#if data.isViewingSelf && data.user}
@@ -84,17 +99,22 @@
         <!-- User Profile Header -->
         <div class="mb-8 flex flex-row items-start gap-4">
             <Avatar class="h-16 w-16">
-                <AvatarImage src={data.user.picture} alt={data.user.display_name} />
+                <AvatarImage src={currentUser?.picture} alt={currentUser?.display_name} />
                 <AvatarFallback>
-                    {data.user.display_name.charAt(0).toUpperCase()}
+                    {currentUser?.display_name.charAt(0).toUpperCase()}
                 </AvatarFallback>
             </Avatar>
             <div class="flex-1">
-                <h1 class="text-3xl font-bold">{data.user.display_name}'s Calendar</h1>
-                <div class="mt-3">
-                    <CalendarManagerSheet user={data.user}>
+                <h1 class="text-3xl font-bold">{currentUser?.display_name}'s Calendar</h1>
+                <div class="mt-3 flex gap-2">
+                    <CalendarManagerSheet user={currentUser || undefined}>
                         <Button variant="outline" size="sm">Manage my calendars</Button>
                     </CalendarManagerSheet>
+                    {#if currentUser}
+                        <UserProfileEditSheet user={currentUser} onUserUpdate={handleUserUpdate}>
+                            <Button variant="outline" size="sm">Edit Profile</Button>
+                        </UserProfileEditSheet>
+                    {/if}
                 </div>
             </div>
         </div>

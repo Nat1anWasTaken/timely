@@ -18,6 +18,8 @@ import type {
     LoginRequest,
     PublicUserProfileResponse,
     RegisterRequest,
+    UpdateUserProfileRequest,
+    UpdateUserProfileResponse,
     UserProfileResponse
 } from "./types/api.js";
 
@@ -223,6 +225,10 @@ class ApiClient {
             end_timestamp: params.end_timestamp
         };
         return this.get<CalendarEventsResponse>(`/api/users/${params.username}/events`, queryParams);
+    }
+
+    async updateUserProfile(request: UpdateUserProfileRequest): Promise<UpdateUserProfileResponse> {
+        return this.patch<UpdateUserProfileResponse>("/api/users/me", request);
     }
 
     // Utility Methods

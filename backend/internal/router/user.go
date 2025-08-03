@@ -34,6 +34,7 @@ func UserRouter(r chi.Router) {
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.JWTMiddleware(zap.L()))
 			r.Get("/me", userHandler.GetProfile)
+			r.Patch("/me", userHandler.UpdateProfile)
 		})
 
 		// Public endpoints (no authentication required)
