@@ -103,11 +103,9 @@
                     isCurrentMonth={dayInfo.isInPrimaryMonth}
                     specialBorderClass={getCornerRoundingClass(rowIndex, colIndex)}
                     dayOfWeek={getDayOfWeek(rowIndex, colIndex)}
-                >
-                    {#each getEventsForDate(dayInfo.date) as { event, calendar } (event.id)}
-                        <CalendarEventComponent {event} {calendar} />
-                    {/each}
-                </Day>
+                    date={dayInfo.date}
+                    events={getEventsForDate(dayInfo.date)}
+                />
             {/each}
         {/each}
     </div>
