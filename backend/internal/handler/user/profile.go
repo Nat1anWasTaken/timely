@@ -9,6 +9,7 @@ import (
 	"github.com/NathanWasTaken/timely/backend/internal/middleware"
 	"github.com/NathanWasTaken/timely/backend/internal/model"
 	"github.com/NathanWasTaken/timely/backend/internal/service"
+	"github.com/NathanWasTaken/timely/backend/pkg/utils"
 )
 
 type UserHandler struct {
@@ -185,6 +186,12 @@ func (h *UserHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		// Validate new username
 		if *req.Username == "" {
 			sendErrorResponse(w, "Username cannot be empty", "invalid_username", http.StatusBadRequest)
+			return
+		}
+
+		// Validate username format
+		if !utils.ValidateUsername(*req.Username) {
+			sendErrorResponse(w, "Username can only contain letters (A-Z), numbers (0-9), underscore (_), and dot (.), cannot start or end with dot, and cannot have consecutive dots", "invalid_username_format", http.StatusBadRequest)
 			return
 		}
 

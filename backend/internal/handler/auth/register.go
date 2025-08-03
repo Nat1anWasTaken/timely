@@ -87,7 +87,7 @@ func (h *RegisterHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if !utils.ValidateUsername(registerReq.Username) {
 		response := model.ErrorResponse{
 			Success: false,
-			Message: "Username can only contain lowercase letters (a-z), numbers (0-9), underscore (_), and dot (.)",
+			Message: "Username can only contain letters (A-Z), numbers (0-9), underscore (_), and dot (.), cannot start or end with dot, and cannot have consecutive dots",
 		}
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(response)

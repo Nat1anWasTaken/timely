@@ -20,6 +20,22 @@
     let loading = $state(false);
     let errors = $state<Record<string, string>>({});
 
+    // Username validation function matching Instagram rules
+    function isValidUsername(username: string): boolean {
+        // Check for consecutive dots
+        if (username.includes("..")) {
+            return false;
+        }
+
+        // Check if starts or ends with dot
+        if (username.startsWith(".") || username.endsWith(".")) {
+            return false;
+        }
+
+        // Check if only contains valid characters: A-Z, a-z, 0-9, _, .
+        return /^[A-Za-z0-9_.]+$/.test(username);
+    }
+
     // Validation
     function validateForm() {
         const newErrors: Record<string, string> = {};
@@ -28,8 +44,9 @@
             newErrors.username = "Username is required";
         } else if (username.length < 3) {
             newErrors.username = "Username must be at least 3 characters";
-        } else if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-            newErrors.username = "Username can only contain letters, numbers, underscores, and hyphens";
+        } else if (!isValidUsername(username)) {
+            newErrors.username =
+                "Username can only contain letters, numbers, underscores, and dots. Cannot start or end with dot, and cannot have consecutive dots";
         }
 
         if (!displayName.trim()) {
@@ -43,9 +60,7 @@
     }
 
     // Check if form has changes
-    let hasChanges = $derived(
-        username !== user.username || displayName !== user.display_name
-    );
+    let hasChanges = $derived(username !== user.username || displayName !== user.display_name);
 
     async function handleSubmit() {
         if (!validateForm()) {
@@ -62,11 +77,11 @@
 
         try {
             const updateRequest: UpdateUserProfileRequest = {};
-            
+
             if (username !== user.username) {
                 updateRequest.username = username;
             }
-            
+
             if (displayName !== user.display_name) {
                 updateRequest.display_name = displayName;
             }
@@ -84,8 +99,11 @@
                 // Handle specific validation errors from backend
                 if (err.data.error === "username_taken") {
                     errors = { username: "Username is already taken" };
-                } else if (err.data.error === "invalid_username") {
-                    errors = { username: err.message || "Invalid username" };
+                } else if (
+                    err.data.error === "invalid_username" ||
+                    err.data.error === "invalid_username_format"
+                ) {
+                    errors = { username: err.data.message || "Invalid username" };
                 } else if (err.data.error === "invalid_display_name") {
                     errors = { displayName: err.message || "Invalid display name" };
                 } else {
@@ -132,9 +150,9 @@
                 disabled={loading}
             />
             {#if errors.username}
-                <p class="text-sm text-destructive">{errors.username}</p>
+                <p class="text-destructive text-sm">{errors.username}</p>
             {/if}
-            <p class="text-xs text-muted-foreground">
+            <p class="text-muted-foreground text-xs">
                 Your username is how others can find your public calendar at /{username}
             </p>
         </div>
@@ -151,24 +169,21 @@
                 disabled={loading}
             />
             {#if errors.displayName}
-                <p class="text-sm text-destructive">{errors.displayName}</p>
+                <p class="text-destructive text-sm">{errors.displayName}</p>
             {/if}
-            <p class="text-xs text-muted-foreground">
+            <p class="text-muted-foreground text-xs">
                 This is the name that will be displayed on your profile and calendar
             </p>
         </div>
     </div>
 
     <div class="flex justify-end space-x-2 border-t p-4">
-        <Button variant="outline" onclick={onCancel} disabled={loading}>
-            Cancel
-        </Button>
-        <Button 
-            onclick={handleSubmit} 
-            disabled={loading || !hasChanges}
-        >
+        <Button variant="outline" onclick={onCancel} disabled={loading}>Cancel</Button>
+        <Button onclick={handleSubmit} disabled={loading || !hasChanges}>
             {#if loading}
-                <div class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                <div
+                    class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+                ></div>
             {/if}
             Save Changes
         </Button>
