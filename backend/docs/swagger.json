@@ -677,6 +677,67 @@
                         }
                     }
                 }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates the authenticated user's profile information (username and/or display name)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Update User Profile",
+                "parameters": [
+                    {
+                        "description": "Profile update request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateUserProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User profile updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateUserProfileResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input or username already taken",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/api/users/{username}": {
@@ -1472,6 +1533,39 @@
                     "maxLength": 50,
                     "minLength": 3,
                     "example": "johndoe"
+                }
+            }
+        },
+        "model.UpdateUserProfileRequest": {
+            "description": "User profile update request",
+            "type": "object",
+            "properties": {
+                "display_name": {
+                    "description": "New display name (optional)",
+                    "type": "string",
+                    "example": "New Name"
+                },
+                "username": {
+                    "description": "New username (optional)",
+                    "type": "string",
+                    "example": "newusername"
+                }
+            }
+        },
+        "model.UpdateUserProfileResponse": {
+            "description": "User profile update response",
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "User profile updated successfully"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "user": {
+                    "$ref": "#/definitions/model.User"
                 }
             }
         },

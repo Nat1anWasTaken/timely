@@ -490,6 +490,30 @@ definitions:
     - password
     - username
     type: object
+  model.UpdateUserProfileRequest:
+    description: User profile update request
+    properties:
+      display_name:
+        description: New display name (optional)
+        example: New Name
+        type: string
+      username:
+        description: New username (optional)
+        example: newusername
+        type: string
+    type: object
+  model.UpdateUserProfileResponse:
+    description: User profile update response
+    properties:
+      message:
+        example: User profile updated successfully
+        type: string
+      success:
+        example: true
+        type: boolean
+      user:
+        $ref: '#/definitions/model.User'
+    type: object
   model.User:
     description: User account information
     properties:
@@ -1058,6 +1082,46 @@ paths:
       security:
       - BearerAuth: []
       summary: Get User Profile
+      tags:
+      - User
+    patch:
+      consumes:
+      - application/json
+      description: Updates the authenticated user's profile information (username
+        and/or display name)
+      parameters:
+      - description: Profile update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateUserProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile updated successfully
+          schema:
+            $ref: '#/definitions/model.UpdateUserProfileResponse'
+        "400":
+          description: Bad Request - Invalid input or username already taken
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized - Authentication required
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update User Profile
       tags:
       - User
 swagger: "2.0"
