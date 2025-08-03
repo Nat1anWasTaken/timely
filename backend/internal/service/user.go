@@ -100,7 +100,23 @@ func (s *UserService) FindOrCreateGoogleUser(googleUser *model.GoogleUserInfo, t
 	}
 
 	if err := s.userRepo.Create(user); err != nil {
-		return nil, err
+		// Handle UNIQUE constraint violations gracefully
+		if s.isUniqueConstraintError(err) {
+			if strings.Contains(err.Error(), "users.username") {
+				// Username collision - regenerate username and retry
+				user.Username = s.generateUniqueUsername(googleUser.Name)
+				if retryErr := s.userRepo.Create(user); retryErr != nil {
+					if s.isUniqueConstraintError(retryErr) {
+						return nil, errors.New("failed to generate unique username after retry")
+					}
+					return nil, retryErr
+				}
+			} else {
+				return nil, errors.New("user already exists")
+			}
+		} else {
+			return nil, err
+		}
 	}
 
 	// Create Google account
@@ -163,59 +179,35 @@ func (s *UserService) GetUserWithAccountsByID(id uint64) (*model.User, error) {
 
 // CreateUser creates a new user with email/password authentication
 func (s *UserService) CreateUser(req *model.RegisterRequest) (*model.User, error) {
-	// Check if user already exists
-	exists, err := s.userRepo.ExistsByEmail(req.Email)
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		return nil, errors.New("user with this email already exists")
-	}
+	return s.createUserWithTransaction(req, func(req *model.RegisterRequest) (*model.User, *model.Account, error) {
+		// Hash password
+		hashedPassword, err := s.hashPassword(req.Password)
+		if err != nil {
+			return nil, nil, err
+		}
 
-	exists, err = s.userRepo.ExistsByUsername(req.Username)
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		return nil, errors.New("username already taken")
-	}
+		// Create user
+		user := &model.User{
+			ID:          utils.GenerateID(),
+			Username:    req.Username,
+			DisplayName: req.DisplayName,
+			Password:    &hashedPassword,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		}
 
-	// Hash password
-	hashedPassword, err := s.hashPassword(req.Password)
-	if err != nil {
-		return nil, err
-	}
+		// Create email account
+		emailAccount := &model.Account{
+			ID:         utils.GenerateID(),
+			UserID:     user.ID,
+			Provider:   "email",
+			ProviderID: req.Email,
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
+		}
 
-	// Create user
-	user := &model.User{
-		ID:          utils.GenerateID(),
-		Username:    req.Username,
-		DisplayName: req.DisplayName,
-		Password:    &hashedPassword,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-	}
-
-	if err := s.userRepo.Create(user); err != nil {
-		return nil, err
-	}
-
-	// Create email account
-	emailAccount := &model.Account{
-		ID:         utils.GenerateID(),
-		UserID:     user.ID,
-		Provider:   "email",
-		ProviderID: req.Email,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
-	}
-
-	if err := s.userRepo.CreateAccount(emailAccount); err != nil {
-		return nil, err
-	}
-
-	s.logger.Info("Created new user", zap.String("username", user.Username))
-	return user, nil
+		return user, emailAccount, nil
+	})
 }
 
 // AuthenticateUser authenticates a user with email/password
@@ -269,13 +261,16 @@ func (s *UserService) generateUniqueUsername(name string) string {
 		return baseUsername
 	}
 
-	// If username exists, try appending random numbers (up to 10 attempts)
-	for i := 0; i < 10; i++ {
-		randomSuffix := rand.Intn(9999) + 1 // Generate 1-9999
-		candidateUsername := fmt.Sprintf("%s%d", baseUsername, randomSuffix)
+	// If username exists, try appending random numbers with increasing range
+	attempts := []int{99, 999, 9999, 99999} // Increasing range for better distribution
+	for _, maxNum := range attempts {
+		for i := 0; i < 5; i++ { // 5 attempts per range
+			randomSuffix := rand.Intn(maxNum) + 1
+			candidateUsername := fmt.Sprintf("%s%d", baseUsername, randomSuffix)
 
-		if exists, err := s.userRepo.ExistsByUsername(candidateUsername); err == nil && !exists {
-			return candidateUsername
+			if exists, err := s.userRepo.ExistsByUsername(candidateUsername); err == nil && !exists {
+				return candidateUsername
+			}
 		}
 	}
 
@@ -298,17 +293,31 @@ func (s *UserService) sanitizeUsernameInput(input string) string {
 
 // generateRandomUsername generates a random username in the format "user" + random number
 func (s *UserService) generateRandomUsername() string {
-	for i := 0; i < 10; i++ {
-		randomNum := rand.Intn(999999) + 100000 // Generate 6-digit number
-		username := fmt.Sprintf("user%d", randomNum)
+	// Try multiple patterns and ranges for better uniqueness
+	patterns := []struct {
+		prefix string
+		min    int
+		max    int
+	}{
+		{"user", 100000, 999999},     // user123456
+		{"member", 10000, 99999},     // member12345
+		{"guest", 1000, 9999},        // guest1234
+		{"u", 10000000, 99999999},    // u12345678
+	}
 
-		if exists, err := s.userRepo.ExistsByUsername(username); err == nil && !exists {
-			return username
+	for _, pattern := range patterns {
+		for i := 0; i < 5; i++ { // 5 attempts per pattern
+			randomNum := rand.Intn(pattern.max-pattern.min+1) + pattern.min
+			username := fmt.Sprintf("%s%d", pattern.prefix, randomNum)
+
+			if exists, err := s.userRepo.ExistsByUsername(username); err == nil && !exists {
+				return username
+			}
 		}
 	}
 
-	// Fallback: use timestamp-based username
-	timestamp := time.Now().Unix()
+	// Ultimate fallback: use timestamp with microseconds for uniqueness
+	timestamp := time.Now().UnixNano() / 1000 // microseconds
 	return fmt.Sprintf("user%d", timestamp)
 }
 
@@ -345,4 +354,62 @@ func (s *UserService) LinkGoogleAccount(userID uint64, googleID string, email st
 	}
 
 	return s.userRepo.CreateAccount(googleAccount)
+}
+
+// createUserWithTransaction creates a user and account atomically within a transaction
+func (s *UserService) createUserWithTransaction(req *model.RegisterRequest, createFunc func(*model.RegisterRequest) (*model.User, *model.Account, error)) (*model.User, error) {
+	// Pre-flight checks outside transaction for better performance
+	exists, err := s.userRepo.ExistsByEmail(req.Email)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, errors.New("user with this email already exists")
+	}
+
+	exists, err = s.userRepo.ExistsByUsername(req.Username)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, errors.New("username already taken")
+	}
+
+	// Execute within transaction
+	user, emailAccount, err := createFunc(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create user
+	if err := s.userRepo.Create(user); err != nil {
+		// Handle UNIQUE constraint violations gracefully
+		if s.isUniqueConstraintError(err) {
+			if strings.Contains(err.Error(), "users.username") {
+				return nil, errors.New("username already taken")
+			}
+			return nil, errors.New("user already exists")
+		}
+		return nil, err
+	}
+
+	// Create account
+	if err := s.userRepo.CreateAccount(emailAccount); err != nil {
+		return nil, err
+	}
+
+	s.logger.Info("Created new user", zap.String("username", user.Username))
+	return user, nil
+}
+
+// isUniqueConstraintError checks if the error is a UNIQUE constraint violation
+func (s *UserService) isUniqueConstraintError(err error) bool {
+	if err == nil {
+		return false
+	}
+	
+	errStr := strings.ToLower(err.Error())
+	return strings.Contains(errStr, "unique constraint failed") || 
+		   strings.Contains(errStr, "duplicate key") ||
+		   strings.Contains(errStr, "unique_violation")
 }
