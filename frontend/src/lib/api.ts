@@ -44,17 +44,6 @@ class ApiClient {
         }
     }
 
-    setToken(token: string | null) {
-        this.token = token;
-        if (typeof window !== "undefined") {
-            if (token) {
-                localStorage.setItem("auth_token", token);
-            } else {
-                localStorage.removeItem("auth_token");
-            }
-        }
-    }
-
     getToken(): string | null {
         return this.token;
     }
@@ -138,23 +127,16 @@ class ApiClient {
     // Authentication Methods
     async login(credentials: LoginRequest): Promise<AuthResponse> {
         const response = await this.post<AuthResponse>("/api/auth/login", credentials);
-        if (response.success && response.token) {
-            this.setToken(response.token);
-        }
         return response;
     }
 
     async register(userData: RegisterRequest): Promise<AuthResponse> {
         const response = await this.post<AuthResponse>("/api/auth/register", userData);
-        if (response.success && response.token) {
-            this.setToken(response.token);
-        }
         return response;
     }
 
     async logout(): Promise<AuthResponse> {
         const response = await this.post<AuthResponse>("/api/auth/logout");
-        this.setToken(null);
         return response;
     }
 
