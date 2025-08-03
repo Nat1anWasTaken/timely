@@ -27,7 +27,7 @@ func NewCalendarHandler(calendarService *service.CalendarService) *CalendarHandl
 
 // GetCalendarEvents retrieves all events for user's calendars within a specified time range
 // @Summary Get Calendar Events
-// @Description Retrieves all events for user's calendars within a specified time range (max 3 months)
+// @Description Retrieves all events for user's calendars within a specified time range (max 6 months)
 // @Tags Calendar
 // @Produce json
 // @Security BearerAuth
@@ -97,8 +97,8 @@ func (h *CalendarHandler) GetCalendarEvents(w http.ResponseWriter, r *http.Reque
 
 		// Handle specific error cases
 		switch {
-		case err.Error() == "time range cannot exceed 3 months":
-			sendErrorResponse(w, "Time range cannot exceed 3 months", "time_range_too_large", http.StatusBadRequest)
+		case err.Error() == "time range cannot exceed 6 months":
+			sendErrorResponse(w, "Time range cannot exceed 6 months", "time_range_too_large", http.StatusBadRequest)
 		default:
 			sendErrorResponse(w, "Failed to retrieve calendar events", "calendar_events_fetch_error", http.StatusInternalServerError)
 		}

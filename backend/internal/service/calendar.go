@@ -625,8 +625,8 @@ func (s *CalendarService) fetchEventsFromGoogleWithResponse(accessToken, calenda
 	} else {
 		// For full sync, use time range
 		now := time.Now()
-		timeMin := now.AddDate(0, 0, -30).Format(time.RFC3339)
-		timeMax := now.AddDate(1, 0, 0).Format(time.RFC3339)
+		timeMin := now.AddDate(-1, 0, 0).Format(time.RFC3339) // 1 year of historical data
+		timeMax := now.AddDate(1, 0, 0).Format(time.RFC3339)  // 1 year forward
 		q.Add("timeMin", timeMin)
 		q.Add("timeMax", timeMax)
 		q.Add("singleEvents", "true")
@@ -924,60 +924,6 @@ func (s *CalendarService) applySyncChanges(changes *SyncEventChanges, calendarID
 	return nil
 }
 
-// forceRefreshToken forces a token refresh regardless of expiry time
-func (s *CalendarService) forceRefreshToken(account *model.Account) error {
-	s.logger.Info("Force refreshing OAuth token", zap.Uint64("user_id", account.UserID))
-
-	// Validate we have refresh token
-	if account.RefreshToken == nil || *account.RefreshToken == "" {
-		return fmt.Errorf("no refresh token available for user %d", account.UserID)
-	}
-
-	// Create oauth2.Token for refresh
-	oauthToken := &oauth2.Token{
-		RefreshToken: *account.RefreshToken,
-	}
-
-	// Refresh the token using the OAuth config
-	ctx := context.Background()
-	tokenSource := s.oauthConfig.Google.TokenSource(ctx, oauthToken)
-
-	newToken, err := tokenSource.Token()
-	if err != nil {
-		s.logger.Error("Failed to force refresh OAuth token",
-			zap.Error(err),
-			zap.Uint64("user_id", account.UserID))
-		return fmt.Errorf("failed to force refresh token for user %d: %w", account.UserID, err)
-	}
-
-	// Validate new token
-	if newToken.AccessToken == "" {
-		return fmt.Errorf("received empty access token for user %d", account.UserID)
-	}
-
-	// Update the token in database
-	refreshToken := newToken.RefreshToken
-	if refreshToken == "" && account.RefreshToken != nil {
-		// Keep existing refresh token if new one is empty
-		refreshToken = *account.RefreshToken
-	}
-
-	if err := s.userRepo.UpdateGoogleAccountTokens(account.UserID, newToken.AccessToken, refreshToken, &newToken.Expiry); err != nil {
-		return fmt.Errorf("failed to update token in database: %w", err)
-	}
-
-	// Update the account object with new tokens for immediate use
-	account.AccessToken = &newToken.AccessToken
-	account.RefreshToken = &refreshToken
-	account.Expiry = &newToken.Expiry
-
-	s.logger.Info("Successfully force refreshed Google token",
-		zap.Uint64("user_id", account.UserID),
-		zap.Time("new_expiry", newToken.Expiry))
-
-	return nil
-}
-
 // convertGoogleEventToCalendarEvent converts a Google Calendar event to our CalendarEvent model
 func (s *CalendarService) convertGoogleEventToCalendarEvent(googleEvent *model.GoogleCalendarEvent, calendarID uint64) (*model.CalendarEvent, error) {
 	// Parse start time
@@ -1049,10 +995,10 @@ func (s *CalendarService) GetUserCalendarEvents(userID uint64, startTime, endTim
 
 // GetUserCalendarEventsWithSync retrieves events with optional force sync
 func (s *CalendarService) GetUserCalendarEventsWithSync(userID uint64, startTime, endTime time.Time, forceSync bool) ([]*model.CalendarWithEvents, error) {
-	// Validate time range (max 3 months)
-	threeMonths := startTime.AddDate(0, 3, 0)
-	if endTime.After(threeMonths) {
-		return nil, fmt.Errorf("time range cannot exceed 3 months")
+	// Validate time range (max 6 months)
+	sixMonths := startTime.AddDate(0, 6, 0)
+	if endTime.After(sixMonths) {
+		return nil, fmt.Errorf("time range cannot exceed 6 months")
 	}
 
 	// Get all user's calendars
@@ -1576,10 +1522,10 @@ func (s *CalendarService) DeleteCalendar(userID uint64, calendarID string) error
 
 // GetPublicUserCalendarEvents retrieves public calendar events for a user within a specified time range
 func (s *CalendarService) GetPublicUserCalendarEvents(userID uint64, startTime, endTime time.Time) ([]*model.CalendarWithEvents, error) {
-	// Validate time range (max 3 months)
-	threeMonths := startTime.AddDate(0, 3, 0)
-	if endTime.After(threeMonths) {
-		return nil, fmt.Errorf("time range cannot exceed 3 months")
+	// Validate time range (max 6 months)
+	sixMonths := startTime.AddDate(0, 6, 0)
+	if endTime.After(sixMonths) {
+		return nil, fmt.Errorf("time range cannot exceed 6 months")
 	}
 
 	// Get all user's calendars

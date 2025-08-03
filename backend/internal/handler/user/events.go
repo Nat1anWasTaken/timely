@@ -28,7 +28,7 @@ func NewUserEventsHandler(calendarService *service.CalendarService, userService 
 
 // GetPublicUserEvents retrieves public calendar events for a specific user
 // @Summary Get Public User Events
-// @Description Retrieves public calendar events for a specific user within a specified time range (max 3 months). No authentication required.
+// @Description Retrieves public calendar events for a specific user within a specified time range (max 6 months). No authentication required.
 // @Tags User
 // @Produce json
 // @Param username path string true "Username"
@@ -103,8 +103,8 @@ func (h *UserEventsHandler) GetPublicUserEvents(w http.ResponseWriter, r *http.R
 
 		// Handle specific error cases
 		switch {
-		case err.Error() == "time range cannot exceed 3 months":
-			sendEventsErrorResponse(w, "Time range cannot exceed 3 months", "time_range_too_large", http.StatusBadRequest)
+		case err.Error() == "time range cannot exceed 6 months":
+			sendEventsErrorResponse(w, "Time range cannot exceed 6 months", "time_range_too_large", http.StatusBadRequest)
 		case err.Error() == "user not found":
 			sendEventsErrorResponse(w, "User not found", "user_not_found", http.StatusNotFound)
 		default:
