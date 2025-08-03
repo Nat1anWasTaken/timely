@@ -4,5 +4,4 @@
 *.db
 timely.db
 tmp/
-
-
+timely
